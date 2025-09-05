@@ -1,4 +1,3 @@
-// Añadimos 'use client' para que el componente sea interactivo en el navegador
 'use client'; 
 
 import Image from "next/image";
@@ -6,27 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react"; // Importamos 'useState' para guardar lo que el usuario escribe
-import { createClient } from "@/lib/supabase-client"; // Importamos nuestro conector de Supabase
+import { useState } from "react"; 
+import { createClient } from "@/lib/supabase-client"; 
+import { useRouter } from 'next/navigation';
 
-export function LoginForm() {
-  // Creamos "cajas" (estados) para guardar el email y la contraseña
+export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const supabase = createClient();
+  const router = useRouter();
 
-  // Esta es la función que se ejecutará cuando se haga clic en el botón
   const handleLogin = async () => {
+    console.log("Intentando iniciar sesión con:", { email, password });
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
 
     if (error) {
-      alert("Error: " + error.message); // Mostramos una alerta simple si hay un error
+      alert("Error: " + error.message); 
     } else {
-      alert("¡Inicio de sesión exitoso!"); // Mostramos una alerta si todo va bien
-      // Aquí es donde más adelante redirigiremos al usuario al examen
+      router.push('/dashboard');
     }
   };
 
@@ -40,7 +40,7 @@ export function LoginForm() {
             width={80}
             height={80}
           />
-          <CardTitle className="text-2xl text-brand-blue">LeanCert Game</CardTitle>
+          <CardTitle className="text-2xl text-brand-blue">Certificación Lean</CardTitle>
           <CardDescription>
             Ingresa tus credenciales para acceder.
           </CardDescription>
@@ -48,7 +48,6 @@ export function LoginForm() {
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Correo Electrónico</Label>
-            {/* Conectamos el campo de email a nuestra "caja" para guardarlo */}
             <Input 
               id="email" 
               type="email" 
@@ -60,7 +59,6 @@ export function LoginForm() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Contraseña</Label>
-            {/* Conectamos el campo de contraseña a nuestra "caja" */}
             <Input 
               id="password" 
               type="password" 
@@ -71,8 +69,7 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter>
-          {/* Conectamos nuestro botón a la función handleLogin */}
-          <Button className="w-full bg-brand-blue hover:bg-brand-red text-white" onClick={handleLogin}>
+          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleLogin}>
             Acceder
           </Button>
         </CardFooter>
