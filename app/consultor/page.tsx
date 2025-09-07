@@ -29,6 +29,7 @@ export default function ConsultantDashboard() {
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
+      // This query fetches all necessary data
       const { data, error } = await supabase
         .from('attempts')
         .select(`id, created_at, status, final_score, profiles(email)`)
@@ -37,14 +38,14 @@ export default function ConsultantDashboard() {
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Mapeamos los datos para asegurarnos que 'profiles' sea un objeto, no un array
+        // --- DATA CORRECTION ---
+        // This map function ensures 'profiles' is an object, not an array
         const formattedData = data.map(attempt => ({
           ...attempt,
           profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
-        // --- FIN DE LA CORRECCIÓN ---
-
+        
+        // Filter the corrected data into the appropriate state variables
         setPendingAttempts(formattedData.filter(a => a.status === 'pending_review'));
         setCompletedAttempts(formattedData.filter(a => a.status === 'completed'));
       }
@@ -52,7 +53,7 @@ export default function ConsultantDashboard() {
     };
 
     fetchAttempts();
-  }, [supabase]); // <-- No olvides añadir supabase a las dependencias si ESLint te lo pide
+  }, [supabase]); // Added supabase to the dependency array to resolve the ESLint warning
 
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
