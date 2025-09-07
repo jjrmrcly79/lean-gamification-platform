@@ -1,3 +1,4 @@
+// app/consultor/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 
+// 1. INTERFAZ ACTUALIZADA para incluir final_score
 interface Attempt {
   id: string;
   created_at: string;
   status: string;
   final_score: number | null;
+  // Corregimos el tipo para que coincida con lo que devuelve Supabase
   profiles: { email: string } | null;
 }
 
@@ -21,9 +24,14 @@ export default function ConsultantDashboard() {
   const [completedAttempts, setCompletedAttempts] = useState<Attempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // app/consultor/page.tsx
+
+  // app/consultor/page.tsx
+
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
+      // Esta consulta obtiene todos los datos necesarios
       const { data, error } = await supabase
         .from('attempts')
         .select(`id, created_at, status, final_score, profiles(email)`)
@@ -32,11 +40,14 @@ export default function ConsultantDashboard() {
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
+        // --- CORRECCIÓN DE DATOS ---
+        // Este map asegura que 'profiles' sea un objeto, no un array
         const formattedData = data.map(attempt => ({
           ...attempt,
           profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
         
+        // Filtra los datos ya corregidos
         setPendingAttempts(formattedData.filter(a => a.status === 'pending_review'));
         setCompletedAttempts(formattedData.filter(a => a.status === 'completed'));
       }
@@ -44,7 +55,7 @@ export default function ConsultantDashboard() {
     };
 
     fetchAttempts();
-  }, [supabase]);
+  }, [supabase]); // Se añade supabase a las dependencias para resolver el aviso de ESLint
 
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
@@ -54,17 +65,18 @@ export default function ConsultantDashboard() {
     <div className="min-h-screen bg-gray-50 p-8 space-y-8">
       <h1 className="text-3xl font-bold text-dark-blue mb-6">Dashboard del Consultor</h1>
       
+      {/* Tarjeta para Evaluaciones Pendientes (sin cambios) */}
       <Card>
         <CardHeader><CardTitle>Evaluaciones Pendientes de Revisión</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Email del Usuario</TableHead>
-                <TableHead>Fecha del Examen</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
+  <TableRow>
+    <TableHead>Email del Usuario</TableHead>
+    <TableHead>Fecha del Examen</TableHead>
+    <TableHead className="text-right">Acción</TableHead>
+  </TableRow>
+</TableHeader>
             <TableBody>
               {pendingAttempts.length > 0 ? (
                 pendingAttempts.map((attempt) => (
@@ -84,24 +96,26 @@ export default function ConsultantDashboard() {
         </CardContent>
       </Card>
 
+      {/* Tarjeta para Historial de Evaluaciones Completadas */}
       <Card>
         <CardHeader><CardTitle>Historial de Evaluaciones Completadas</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Email del Usuario</TableHead>
-                <TableHead>Fecha de Evaluación</TableHead>
-                <TableHead>Calificación Final</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
+  <TableRow>
+    <TableHead>Email del Usuario</TableHead>
+    <TableHead>Fecha de Evaluación</TableHead>
+    <TableHead>Calificación Final</TableHead>
+    <TableHead className="text-right">Acción</TableHead>
+  </TableRow>
+</TableHeader>
             <TableBody>
               {completedAttempts.length > 0 ? (
                 completedAttempts.map((attempt) => (
                   <TableRow key={attempt.id} className="bg-gray-50">
                     <TableCell>{attempt.profiles?.email || 'N/A'}</TableCell>
                     <TableCell>{new Date(attempt.created_at).toLocaleDateString()}</TableCell>
+                    {/* Nueva Celda para mostrar el puntaje */}
                     <TableCell className="font-bold">{attempt.final_score?.toFixed(1) ?? 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="outline">
