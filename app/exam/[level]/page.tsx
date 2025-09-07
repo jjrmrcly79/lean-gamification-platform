@@ -86,6 +86,19 @@ export default function ExamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // --- AÑADE ESTE BLOQUE DE CÓDIGO ---
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Si no hay sesión, redirige al usuario a la página de inicio/login
+        router.push('/');
+      }
+    };
+    checkSession();
+  }, [supabase, router]);
+  // ------------------------------------
+
   useEffect(() => {
     const fetchExam = async () => {
       setIsLoading(true);

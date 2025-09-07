@@ -12,6 +12,7 @@ export default function ExamFinishedPage() {
         <CardHeader className="p-8">
           <div className="mb-6 mx-auto"> 
             <Image
+            
               src="/logo.png" // Asegúrate que esta ruta sea correcta (debe estar en /public)
               alt="Brito & Co Consulting Group Logo"
               width={200} // Ajusta el ancho según lo necesites
