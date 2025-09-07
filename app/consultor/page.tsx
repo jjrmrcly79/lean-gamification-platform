@@ -13,7 +13,8 @@ interface Attempt {
   id: string;
   created_at: string;
   status: string;
-  final_score: number | null; // <-- Añadido
+  final_score: number | null;
+  // Corregimos el tipo para que coincida con lo que devuelve Supabase
   profiles: { email: string } | null;
 }
 
