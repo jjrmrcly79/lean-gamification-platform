@@ -1,4 +1,4 @@
-// app/consultor/page.tsx o app/consultor/evaluaciones/page.tsx
+// app/consultor/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,23 +27,36 @@ export default function ConsultantDashboard() {
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
-      // 2. CONSULTA ACTUALIZADA para traer final_score
+      // Consulta corregida para manejar la relación correctamente
       const { data, error } = await supabase
         .from('attempts')
-        .select(`id, created_at, status, final_score, profiles(email)`) // <-- Añadido
+        .select(`
+          id,
+          created_at,
+          status,
+          final_score,
+          profile:profiles(email)
+        `) // Cambiamos el nombre de la relación a 'profile' (singular)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
-        setPendingAttempts(data.filter(a => a.status === 'pending_review'));
-        setCompletedAttempts(data.filter(a => a.status === 'completed'));
+        // Adaptamos el mapeo de datos
+        const attemptsData = data.map(item => ({
+          ...item,
+          // Asignamos el perfil de forma segura
+          profiles: Array.isArray(item.profile) ? item.profile[0] : item.profile,
+        }));
+
+        setPendingAttempts(attemptsData.filter(a => a.status === 'pending_review'));
+        setCompletedAttempts(attemptsData.filter(a => a.status === 'completed'));
       }
       setIsLoading(false);
     };
 
     fetchAttempts();
-  }, []);
+  }, [supabase]); // <-- No olvides añadir supabase a las dependencias
 
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
