@@ -24,39 +24,35 @@ export default function ConsultantDashboard() {
   const [completedAttempts, setCompletedAttempts] = useState<Attempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // app/consultor/page.tsx
+
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
-      // Consulta corregida para manejar la relación correctamente
       const { data, error } = await supabase
         .from('attempts')
-        .select(`
-          id,
-          created_at,
-          status,
-          final_score,
-          profile:profiles(email)
-        `) // Cambiamos el nombre de la relación a 'profile' (singular)
+        .select(`id, created_at, status, final_score, profiles(email)`)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
-        // Adaptamos el mapeo de datos
-        const attemptsData = data.map(item => ({
-          ...item,
-          // Asignamos el perfil de forma segura
-          profiles: Array.isArray(item.profile) ? item.profile[0] : item.profile,
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Mapeamos los datos para asegurarnos que 'profiles' sea un objeto, no un array
+        const formattedData = data.map(attempt => ({
+          ...attempt,
+          profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
+        // --- FIN DE LA CORRECCIÓN ---
 
-        setPendingAttempts(attemptsData.filter(a => a.status === 'pending_review'));
-        setCompletedAttempts(attemptsData.filter(a => a.status === 'completed'));
+        setPendingAttempts(formattedData.filter(a => a.status === 'pending_review'));
+        setCompletedAttempts(formattedData.filter(a => a.status === 'completed'));
       }
       setIsLoading(false);
     };
 
     fetchAttempts();
-  }, [supabase]); // <-- No olvides añadir supabase a las dependencias
+  }, [supabase]); // <-- No olvides añadir supabase a las dependencias si ESLint te lo pide
 
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
