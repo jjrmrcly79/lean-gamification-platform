@@ -68,7 +68,7 @@ export default function DashboardPage() {
       <header className="flex items-center justify-between w-full px-6 py-3 bg-white border-b">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="Logo" width={40} height={40} />
-          <h1 className="text-xl font-bold text-brand-blue">LeanCert Game</h1>
+          <h1 className="text-xl font-bold text-brand-blue">Diagnóstico Lean</h1>
         </div>
 
         <DropdownMenu>
