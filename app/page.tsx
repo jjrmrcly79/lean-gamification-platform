@@ -1,6 +1,7 @@
 // app/page.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,37 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 
-export default function LoginPage() {
+export default function HomePage() {
   const supabase = createClient();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkUserAndRedirect = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // Si hay un usuario, busca su rol
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        // Redirige según el rol
+        if (profile?.role === 'consultant') {
+          router.push('/consultor/evaluaciones');
+        } else {
+          router.push('/dashboard'); // Asume que es estudiante
+        }
+      } else {
+        // Si NO hay usuario, deja de cargar y muestra el formulario de login
+        setLoading(false);
+      }
+    };
+
+    checkUserAndRedirect();
+  }, [router, supabase]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -18,20 +47,23 @@ export default function LoginPage() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       alert('Error al iniciar sesión: ' + error.message);
     } else {
-      // Si el login es exitoso, redirige al dashboard
-      router.push('/dashboard');
-      router.refresh(); // Refresca la página para asegurar que el estado de la sesión se actualice
+      // Si el login es exitoso, vuelve a cargar la página.
+      // El useEffect se encargará de la redirección.
+      window.location.reload();
     }
   };
 
+  // Muestra "Cargando..." mientras se verifica la sesión
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Verificando sesión...</div>;
+  }
+
+  // Si no está cargando y no hubo redirección, muestra el login
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="w-full max-w-md p-8 space-y-8 bg-white shadow-lg rounded-lg">

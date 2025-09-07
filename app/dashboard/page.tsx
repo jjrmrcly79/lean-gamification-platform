@@ -1,6 +1,6 @@
+// app/dashboard/page.tsx
 'use client'; 
 
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
@@ -13,42 +13,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export default function DashboardPage() {
   const router = useRouter(); 
   const supabase = createClient(); 
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (profile?.role === 'consultant') {
-          router.push('/consultor');
-        } else {
-          setIsLoading(false);
-        }
-      } else {
-        router.push('/'); // Si no hay usuario, va a la página principal (que puede ser el login)
-      }
-    };
-
-    checkUserRole();
-  }, [router, supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut(); 
     router.push('/'); 
+    router.refresh();
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">Cargando...</div>
-    );
-  }
+  
+  // YA NO NECESITAMOS EL useEffect DE REDIRECCIÓN AQUÍ
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -66,7 +38,7 @@ export default function DashboardPage() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/dashboard/results">Mis Resultados</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-500 cursor-pointer" onClick={handleLogout}>
               Cerrar Sesión
@@ -75,8 +47,12 @@ export default function DashboardPage() {
         </DropdownMenu>
       </header>
       <main className="flex-1 p-8">
-        <h2 className="text-3xl font-semibold text-gray-800">Mis Certificaciones</h2>
-        <p className="mt-2 text-gray-600">Selecciona una certificación para comenzar tu evaluación.</p>
+        <h2 className="text-3xl font-semibold text-gray-800">
+          Mis Certificaciones
+        </h2>
+        <p className="mt-2 text-gray-600">
+          Selecciona una certificación para comenzar tu evaluación.
+        </p>
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
@@ -86,12 +62,11 @@ export default function DashboardPage() {
             <CardContent>
               <p className="text-sm text-gray-500">80 Preguntas</p>
             </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-4">
-              <Link href="/dashboard/results" className="w-full">
-                <Button variant="outline" className="w-full">Ver Resultados</Button>
-              </Link>
+            <CardFooter>
               <Link href="/exam/diagnostico" className="w-full">
-                <Button className="w-full bg-dark-blue hover:bg-hover-blue text-white">Iniciar Diagnóstico</Button>
+                <Button className="w-full bg-dark-blue hover:bg-hover-blue text-white">
+                  Iniciar Diagnóstico
+                </Button>
               </Link>
             </CardFooter>
           </Card>
