@@ -1,5 +1,6 @@
 'use client'; 
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
@@ -20,22 +21,54 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function DashboardPage() { // <-- Fíjate que el nombre es DashboardPage
+export default function DashboardPage() {
   const router = useRouter(); 
   const supabase = createClient(); 
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Esta es la función para CERRAR sesión
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.role === 'consultant') {
+          router.push('/consultor');
+        } else {
+          setIsLoading(false);
+        }
+      } else {
+        router.push('/'); // Si no hay usuario, va al login
+      }
+    };
+
+    checkUserRole();
+  }, [router, supabase]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut(); 
     router.push('/'); 
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Cargando...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="flex items-center justify-between w-full px-6 py-3 bg-white border-b">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="Logo" width={40} height={40} />
-          <h1 className="text-xl font-bold text-brand-blue">Certificación Lean</h1>
+          <h1 className="text-xl font-bold text-brand-blue">LeanCert Game</h1>
         </div>
 
         <DropdownMenu>
@@ -71,16 +104,22 @@ export default function DashboardPage() { // <-- Fíjate que el nombre es Dashbo
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle>Certificación Nivel Junior</CardTitle>
-              <CardDescription>Evalúa tus conocimientos en los fundamentos y herramientas básicas de Lean.</CardDescription>
+              <CardTitle>Diagnóstico Lean</CardTitle>
+              <CardDescription>Evalúa tus conocimientos en los fundamentos y herramientas de Lean Manufacturing.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">40 Preguntas | 45 Minutos</p>
+              <p className="text-sm text-gray-500">80 Preguntas</p>
             </CardContent>
-            <CardFooter>
-              <Link href="/exam/junior" className="w-full">
+            {/* --- SECCIÓN CORREGIDA CON AMBOS BOTONES --- */}
+            <CardFooter className="grid grid-cols-2 gap-4">
+              <Link href="/dashboard/results" className="w-full">
+                <Button variant="outline" className="w-full">
+                  Ver Resultados
+                </Button>
+              </Link>
+              <Link href="/exam/diagnostico" className="w-full">
                 <Button className="w-full bg-primary text-primary-foreground">
-                  Iniciar Examen
+                  Iniciar Diagnóstico
                 </Button>
               </Link>
             </CardFooter>
