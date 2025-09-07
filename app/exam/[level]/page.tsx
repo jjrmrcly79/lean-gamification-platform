@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // <- Asegúrate de tener este import
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import Image from 'next/image';
 
-
-
-// --- PASO 1: DEFINIR LOS TIPOS PRIMERO ---
 interface QuestionOption {
   id: string;
   text: string;
@@ -34,17 +31,16 @@ interface Question {
   generated_distractors: string[];
 }
 
-// --- PASO 2: AÑADIR LOS TIPOS A LA FUNCIÓN ---
 const calculateDetailedScores = (
-  questions: Question[], // <-- TIPO AÑADIDO
-  userAnswers: Record<string, string[]> // <-- TIPO AÑADIDO
+  questions: Question[],
+  userAnswers: Record<string, string[]>
 ) => {
   const results = {
     categories: {} as Record<string, { correct: number; total: number; score?: number }>,
     subcategories: {} as Record<string, { correct: number; total: number; score?: number }>
   };
 
-  questions.forEach((q: Question) => { // <-- Tipo añadido a 'q'
+  questions.forEach((q: Question) => {
     const category = q.category;
     const subcategory = q.subcategory;
     const correctIds = Array.isArray(q.question_data.answer_key.correct_option_id)
@@ -79,30 +75,9 @@ const calculateDetailedScores = (
   return results;
 };
 
-interface QuestionOption {
-  id: string;
-  text: string;
-}
-
-interface Question {
-  id: string;
-  category: string;
-  subcategory: string;
-  question_data: {
-    prompt: string;
-    type: 'single_select' | 'multi_select';
-    options: QuestionOption[];
-    answer_key: {
-      correct_option_id: string | string[];
-    };
-  };
-  generated_distractors: string[];
-}
-
 export default function ExamPage() {
   const router = useRouter();
   const supabase = createClient();
-
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [shuffledOptions, setShuffledOptions] = useState<QuestionOption[]>([]);
@@ -111,7 +86,6 @@ export default function ExamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // OBTENER EL EXAMEN COMPLETO AL CARGAR LA PÁGINA
   useEffect(() => {
     const fetchExam = async () => {
       setIsLoading(true);
@@ -127,17 +101,13 @@ export default function ExamPage() {
         setIsLoading(false);
         return;
       }
-
-      // Barajar el orden de las preguntas al inicio (si lo deseas)
       data.sort(() => Math.random() - 0.5); 
-      
       setQuestions(data);
       setIsLoading(false);
     };
     fetchExam();
-  }, []);
+  }, [supabase]);
 
-  // PREPARAR Y BARAJAR LAS OPCIONES CUANDO CAMBIA LA PREGUNTA
   useEffect(() => {
     if (questions.length === 0) return;
     const currentQuestion = questions[currentQuestionIndex];
@@ -166,51 +136,41 @@ export default function ExamPage() {
   };
   
   const handleNextQuestion = async () => {
-  const currentAnswer = { [questions[currentQuestionIndex].id]: selectedAnswers };
+    const currentAnswer = { [questions[currentQuestionIndex].id]: selectedAnswers };
 
-  if (currentQuestionIndex < questions.length - 1) {
-    setUserAnswers(prev => ({ ...prev, ...currentAnswer }));
-    setCurrentQuestionIndex(prev => prev + 1);
-  } else {
-    // --- LÓGICA FINAL CORREGIDA ---
-    
-    // 1. Obtenemos la sesión del usuario actual
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // Verificamos si el usuario ha iniciado sesión
-    if (!user) {
-      alert("Necesitas iniciar sesión para guardar tus resultados.");
-      // Opcional: redirigir al login
-      // router.push('/login');
-      return; 
-    }
-    
-    const finalUserAnswers = { ...userAnswers, ...currentAnswer };
-    const finalScores = calculateDetailedScores(questions, finalUserAnswers);
-
-    // 2. Guardamos el intento INCLUYENDO el user_id
-    const { data, error } = await supabase
-      .from('attempts')
-      .insert({
-        user_id: user.id, // <-- ¡ESTA ES LA LÍNEA CLAVE!
-        score_by_category: finalScores.categories,
-        score_by_subcategory: finalScores.subcategories,
-        status: 'pending_review'
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      alert("Hubo un error al guardar tus resultados. Por favor, intenta de nuevo.");
-      // Para depurar, es útil ver el error real en la consola
-      console.error("Error saving attempt:", error);
+    if (currentQuestionIndex < questions.length - 1) {
+      setUserAnswers(prev => ({ ...prev, ...currentAnswer }));
+      setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      router.push('/examen-terminado');
-    }
-  }
-};
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert("Necesitas iniciar sesión para guardar tus resultados.");
+        return; 
+      }
+      
+      const finalUserAnswers = { ...userAnswers, ...currentAnswer };
+      const finalScores = calculateDetailedScores(questions, finalUserAnswers);
 
-  // --- Renderizado de la UI ---
+      const { data, error } = await supabase
+        .from('attempts')
+        .insert({
+          user_id: user.id,
+          score_by_category: finalScores.categories,
+          score_by_subcategory: finalScores.subcategories,
+          status: 'pending_review'
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        alert("Hubo un error al guardar tus resultados. Por favor, intenta de nuevo.");
+        console.error("Error saving attempt:", error);
+      } else {
+        router.push('/examen-terminado');
+      }
+    }
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-screen text-lg font-medium text-[#1A237E]">Cargando diagnóstico...</div>;
   if (error) return <div className="flex items-center justify-center h-screen text-lg font-medium text-red-600">{error}</div>;
   if (questions.length === 0) return <div className="flex items-center justify-center h-screen text-lg font-medium text-[#1A237E]">No hay preguntas disponibles.</div>;
@@ -219,83 +179,43 @@ export default function ExamPage() {
   const progressValue = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    // Contenedor principal con fondo blanco y espaciado consistente
     <div className="flex flex-col items-center min-h-screen bg-white p-6 md:p-10">
       <header className="w-full max-w-3xl flex items-center justify-between mb-8">
-        {/* Contenedor del Logo */}
         <div>
-          <Image
-            src="/logo.png" // Apunta al archivo que pusiste en la carpeta /public
-            alt="Logo LeanCert"
-            width={160} // Ajusta el ancho según tu logo
-            height={45} // Ajusta la altura para mantener la proporción
-            priority // Carga el logo más rápido
-          />
+          <Image src="/logo.png" alt="Logo LeanCert" width={160} height={45} priority />
         </div>
-
-        {/* Título del Diagnóstico */}
-        <h1 className="text-3xl font-bold text-[#1A237E]">
-          Diagnóstico Lean
-        </h1>
+        <h1 className="text-3xl font-bold text-[#1A237E]">Diagnóstico Lean</h1>
       </header>
-      <Card className="w-full max-w-3xl border-gray-200 shadow-lg"> {/* Sombra y borde más sutil */}
+      <Card className="w-full max-w-3xl border-gray-200 shadow-lg">
         <CardHeader className="bg-[#1A237E] text-white p-6 rounded-t-lg">
-          <Progress value={progressValue} className="mb-4 h-2 bg-white/30 [&>*]:bg-white" /> {/* Barra de progreso blanca */}
-          <CardTitle className="text-2xl font-bold">
-            Pregunta {currentQuestionIndex + 1} de {questions.length}
-          </CardTitle>
-          <CardDescription className="text-white text-opacity-80">
-            Categoría: {currentQuestion.category} / {currentQuestion.subcategory}
-          </CardDescription>
+          <Progress value={progressValue} className="mb-4 h-2 bg-white/30 [&>*]:bg-white" />
+          <CardTitle className="text-2xl font-bold">Pregunta {currentQuestionIndex + 1} de {questions.length}</CardTitle>
+          <CardDescription className="text-white text-opacity-80">Categoría: {currentQuestion.category} / {currentQuestion.subcategory}</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <p className="text-xl font-semibold mb-8 text-[#1A237E] leading-relaxed"> {/* Texto azul oscuro para la pregunta */}
-            {currentQuestion.question_data.prompt}
-          </p>
-
+          <p className="text-xl font-semibold mb-8 text-[#1A237E] leading-relaxed">{currentQuestion.question_data.prompt}</p>
           {currentQuestion.question_data.type === 'multi_select' ? (
-            <div className="flex flex-col gap-5"> {/* Mayor espacio entre opciones */}
+            <div className="flex flex-col gap-5">
               {shuffledOptions.map((option) => (
                 <div key={option.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                  <Checkbox
-                    id={option.id}
-                    onCheckedChange={(checked) => handleMultiSelectChange(!!checked, option.id)}
-                    checked={selectedAnswers.includes(option.id)}
-                    className="h-5 w-5 border-gray-400 data-[state=checked]:bg-[#DC2626] data-[state=checked]:text-white" // Checkbox rojo
-                  />
-                  <Label htmlFor={option.id} className="font-normal text-lg text-[#333333] cursor-pointer flex-1">
-                    {option.text}
-                  </Label>
+                  <Checkbox id={option.id} onCheckedChange={(checked) => handleMultiSelectChange(!!checked, option.id)} checked={selectedAnswers.includes(option.id)} className="h-5 w-5 border-gray-400 data-[state=checked]:bg-[#DC2626] data-[state=checked]:text-white" />
+                  <Label htmlFor={option.id} className="font-normal text-lg text-[#333333] cursor-pointer flex-1">{option.text}</Label>
                 </div>
               ))}
             </div>
           ) : (
-            <RadioGroup
-              className="flex flex-col gap-5" // Mayor espacio entre opciones
-              value={selectedAnswers[0] || ''}
-              onValueChange={(value) => setSelectedAnswers([value])}
-            >
+            <RadioGroup className="flex flex-col gap-5" value={selectedAnswers[0] || ''} onValueChange={(value) => setSelectedAnswers([value])}>
               {shuffledOptions.map((option) => (
                 <div key={option.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                  <RadioGroupItem 
-                    value={option.id} 
-                    id={option.id} 
-                    className="h-5 w-5 border-gray-400 text-[#DC2626] focus:ring-[#DC2626] focus:ring-offset-2" // Radio button rojo
-                  />
-                  <Label htmlFor={option.id} className="font-normal text-lg text-[#333333] cursor-pointer flex-1">
-                    {option.text}
-                  </Label>
+                  <RadioGroupItem value={option.id} id={option.id} className="h-5 w-5 border-gray-400 text-[#DC2626] focus:ring-[#DC2626] focus:ring-offset-2" />
+                  <Label htmlFor={option.id} className="font-normal text-lg text-[#333333] cursor-pointer flex-1">{option.text}</Label>
                 </div>
               ))}
             </RadioGroup>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end p-6 border-t border-gray-100"> {/* Separador sutil */}
-          <Button 
-            onClick={handleNextQuestion} 
-            disabled={selectedAnswers.length === 0}
-            className="px-8 py-3 text-lg font-semibold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-md transition-colors duration-200" // Botón azul oscuro
-          >
+        <CardFooter className="flex justify-end p-6 border-t border-gray-100">
+          <Button onClick={handleNextQuestion} disabled={selectedAnswers.length === 0} className="px-8 py-3 text-lg font-semibold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-md transition-colors duration-200">
             {currentQuestionIndex < questions.length - 1 ? 'Siguiente' : 'Finalizar Diagnóstico'}
           </Button>
         </CardFooter>
