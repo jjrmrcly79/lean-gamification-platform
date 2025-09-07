@@ -165,13 +165,14 @@ export default function ExamPage() {
       const finalScores = calculateDetailedScores(questions, finalUserAnswers);
 
       const { data, error } = await supabase
-        .from('attempts')
-        .insert({
-          user_id: user.id,
-          score_by_category: finalScores.categories,
-          score_by_subcategory: finalScores.subcategories,
-          status: 'pending_review'
-        })
+  .from('attempts')
+  .insert({
+    // Ya no enviamos el user_id, la base de datos lo hará por nosotros
+    score_by_category: finalScores.categories,
+    score_by_subcategory: finalScores.subcategories,
+    status: 'pending_review'
+  })
+  //...
         .select('id')
         .single();
 
