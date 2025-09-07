@@ -12,7 +12,8 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 
 interface ScoreData {
   score: number;
-  [key: string]: any;
+  correct: number;
+  total: number;
 }
 
 interface Attempt {
