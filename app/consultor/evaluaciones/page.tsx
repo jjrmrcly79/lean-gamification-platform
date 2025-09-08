@@ -31,7 +31,6 @@ export default function ConsultantDashboard() {
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
-      // Esta consulta obtiene todos los datos necesarios
       const { data, error } = await supabase
         .from('attempts')
         .select(`id, created_at, status, final_score, profiles(email)`)
@@ -40,14 +39,13 @@ export default function ConsultantDashboard() {
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
-        // --- CORRECCIÓN DE DATOS ---
-        // Este map asegura que 'profiles' sea un objeto, no un array
+        // --- CORRECCIÓN ---
+        // Se añade el tipo 'any' para solucionar el error de compilación
         const formattedData = data.map((attempt: any) => ({
           ...attempt,
           profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
         
-        // Filtra los datos ya corregidos
         setPendingAttempts(formattedData.filter(a => a.status === 'pending_review'));
         setCompletedAttempts(formattedData.filter(a => a.status === 'completed'));
       }
@@ -55,8 +53,7 @@ export default function ConsultantDashboard() {
     };
 
     fetchAttempts();
-  }, [supabase]); // Se añade supabase a las dependencias para resolver el aviso de ESLint
-
+  }, [supabase]);
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
   }
