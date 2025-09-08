@@ -1,14 +1,29 @@
-// app/consultor/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabase-client';
+// FIX: Changed alias path to relative path for better resolution.
+import { getSupabaseBrowserClient } from '../../../lib/supabase-client';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 
-interface Attempt {
+// CORRECCIÓN 1: Definir tipos más precisos para los datos de Supabase.
+// Esto nos permite eliminar 'any' y tener un código más seguro y predecible.
+
+// Este tipo representa la estructura de los datos tal como vienen de la consulta de Supabase,
+// donde 'profiles' puede ser un objeto, un array de objetos o nulo.
+interface AttemptFromDB {
+  id: string;
+  created_at: string;
+  status: 'pending_review' | 'completed';
+  final_score: number | null;
+  profiles: { email: string } | { email: string }[] | null;
+}
+
+// Este es el tipo que usaremos en nuestro estado, después de formatear los datos.
+// Nos aseguramos de que 'profiles' sea siempre un objeto o nulo.
+interface FormattedAttempt {
   id: string;
   created_at: string;
   status: string;
@@ -18,24 +33,36 @@ interface Attempt {
 
 export default function ConsultantDashboard() {
   const supabase = getSupabaseBrowserClient();
-  const [pendingAttempts, setPendingAttempts] = useState<Attempt[]>([]);
-  const [completedAttempts, setCompletedAttempts] = useState<Attempt[]>([]);
+  // Usamos el tipo FormattedAttempt para nuestros estados.
+  const [pendingAttempts, setPendingAttempts] = useState<FormattedAttempt[]>([]);
+  const [completedAttempts, setCompletedAttempts] = useState<FormattedAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAttempts = async () => {
       setIsLoading(true);
+      
+      // CORRECCIÓN 2: Tipar la respuesta de la consulta con .returns<T>()
+      // Esto le dice a TypeScript qué estructura de datos esperamos, eliminando los errores
+      // y dándonos autocompletado para el objeto 'data'.
       const { data, error } = await supabase
         .from('attempts')
         .select(`id, created_at, status, final_score, profiles(email)`)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<AttemptFromDB[]>(); // Le indicamos que esperamos un array de AttemptFromDB
 
       if (error) {
         console.error("Error fetching attempts:", error);
-      } else if (data) {
-        // Se añade el tipo 'any' para solucionar el error de compilación de Vercel
-        const formattedData = data.map((attempt: any) => ({
+        setIsLoading(false); // Buena práctica: detener la carga también en caso de error.
+        return;
+      } 
+      
+      if (data) {
+        // CORRECCIÓN 3: Mapeo de datos sin 'any'.
+        // TypeScript ahora sabe que 'attempt' es de tipo AttemptFromDB gracias a .returns()
+        const formattedData: FormattedAttempt[] = data.map((attempt) => ({
           ...attempt,
+          // Normalizamos el campo 'profiles' para que siempre sea un objeto o nulo.
           profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
         
@@ -45,8 +72,11 @@ export default function ConsultantDashboard() {
       setIsLoading(false);
     };
 
-    fetchAttempts();
-  }, [supabase]); // Se añade la dependencia para una buena práctica
+    // Buena práctica: asegurarse de que el cliente de Supabase esté listo antes de llamar.
+    if (supabase) {
+      fetchAttempts();
+    }
+  }, [supabase]); // La dependencia es correcta.
 
   if (isLoading) {
     return <div className="p-8">Cargando evaluaciones...</div>;
