@@ -39,7 +39,7 @@ export default function ConsultantDashboard() {
       if (error) {
         console.error("Error fetching attempts:", error);
       } else if (data) {
-        // --- CORRECCIÓN ---
+        // --- CORRECCIÓNdsfsdf ---
         // Se añade el tipo 'any' para solucionar el error de compilación
         const formattedData = data.map((attempt: any) => ({
           ...attempt,
