@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
   const router = useRouter();
 
   const handleLogin = async () => {

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -34,7 +34,7 @@ export default function EvaluationPage() {
   const params = useParams();
   const router = useRouter();
   const attemptId = params.attemptId as string;
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
 
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [isLoading, setIsLoading] = useState(true);

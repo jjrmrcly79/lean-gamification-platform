@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default function HomePage() {
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 

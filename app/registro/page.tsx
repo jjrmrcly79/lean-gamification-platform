@@ -1,7 +1,7 @@
 // app/registro/page.tsx
 'use client';
 
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 export default function SignUpPage() {
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
 

@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import {
 
 export default function Header() {
   const router = useRouter(); 
-  const supabase = createClient(); 
+  const supabase = getSupabaseBrowserClient(); 
 
   const handleLogout = async () => {
     await supabase.auth.signOut(); 

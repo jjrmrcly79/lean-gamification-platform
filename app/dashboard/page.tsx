@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import {
   Avatar,
   AvatarFallback,
@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function DashboardPage() {
   const router = useRouter(); 
-  const supabase = createClient(); 
+  const supabase = getSupabaseBrowserClient(); 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

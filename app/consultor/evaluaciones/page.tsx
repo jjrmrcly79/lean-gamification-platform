@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,7 +19,7 @@ interface Attempt {
 }
 
 export default function ConsultantDashboard() {
-  const supabase = createClient();
+  const supabase = getSupabaseBrowserClient();
   const [pendingAttempts, setPendingAttempts] = useState<Attempt[]>([]);
   const [completedAttempts, setCompletedAttempts] = useState<Attempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
