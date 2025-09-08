@@ -42,7 +42,7 @@ export default function ConsultantDashboard() {
       } else if (data) {
         // --- CORRECCIÓN DE DATOS ---
         // Este map asegura que 'profiles' sea un objeto, no un array
-        const formattedData = data.map(attempt => ({
+        const formattedData = data.map((attempt: any) => ({
           ...attempt,
           profiles: Array.isArray(attempt.profiles) ? attempt.profiles[0] : attempt.profiles,
         }));
