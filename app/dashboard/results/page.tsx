@@ -4,27 +4,15 @@ import { useState, useEffect } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
+import { type Database } from '@/lib/database.types';
 
+type ScoreByCategory = Record<string, { score: number }>;
+type ScoreBySubcategory = Record<string, { score: number }>;
 
-// 1. INTERFAZ ACTUALIZADA para incluir subcategorías
-interface Attempt {
-  id: string;
-  final_score: number | null;
-  status: string;
-  created_at: string;
-  score_by_category: Record<string, { score: number }>;
-  score_by_subcategory: Record<string, { score: number }>; // <-- Añadido
-  // Añadimos también los puntajes prácticos para mostrarlos
-  perfil_score: number | null;
-  kaizen_score: number | null;
-  herramientas_score: number | null;
-  involucramiento_score: number | null;
-  sostenimiento_score: number | null;
-}
+type Attempt = Database['public']['Tables']['attempts']['Row'];
 
 export default function ResultsPage() {
   const supabase = getSupabaseBrowserClient();
@@ -35,10 +23,9 @@ export default function ResultsPage() {
     const fetchAttempts = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // 2. CONSULTA ACTUALIZADA para traer todos los datos
         const { data, error } = await supabase
           .from('attempts')
-          .select('*') // Pedimos todas las columnas
+          .select('*')
           .eq('user_id', user.id)
           .eq('status', 'completed')
           .order('created_at', { ascending: false });
@@ -46,24 +33,23 @@ export default function ResultsPage() {
         if (error) {
           console.error("Error fetching completed attempts:", error);
         } else if (data) {
-          setAttempts(data as Attempt[]);
+          setAttempts(data);
         }
       }
       setLoading(false);
     };
     fetchAttempts();
-  }, []);
+  }, [supabase]);
 
   const latestAttempt = attempts?.[0];
 
-  const categoryRadarData = latestAttempt ? Object.entries(latestAttempt.score_by_category).map(([name, data]) => ({
+  const categoryRadarData = latestAttempt && latestAttempt.score_by_category ? Object.entries(latestAttempt.score_by_category as ScoreByCategory).map(([name, data]) => ({
     subject: name,
     score: data.score,
     fullMark: 100
   })) : [];
 
-  // 3. PREPARACIÓN DE DATOS para el nuevo gráfico de subcategorías
-  const subcategoryRadarData = latestAttempt ? Object.entries(latestAttempt.score_by_subcategory).map(([name, data]) => ({
+  const subcategoryRadarData = latestAttempt && latestAttempt.score_by_subcategory ? Object.entries(latestAttempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({
     subject: name,
     score: data.score,
     fullMark: 100
@@ -80,7 +66,6 @@ export default function ResultsPage() {
           <p>Cargando resultados...</p>
         ) : latestAttempt ? (
           <div className="w-full max-w-5xl mx-auto space-y-8">
-            {/* Tarjeta de Resumen Principal */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-3xl text-dark-blue">Informe Final de Diagnóstico</CardTitle>
@@ -97,7 +82,6 @@ export default function ResultsPage() {
               </CardContent>
             </Card>
 
-            {/* Grid para los detalles */}
             <div className="grid gap-8 lg:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -122,7 +106,7 @@ export default function ResultsPage() {
                 <CardContent className="space-y-4 pt-4">
                     <div>
                         <Label>Apego a Perfil (10%)</Label>
-                        <Progress value={latestAttempt.perfil_score} className="mt-1" />
+                        <Progress value={latestAttempt.perfil_score || 0} className="mt-1" />
                     </div>
                     <div>
                         <Label>Aplicación en Piso (50%)</Label>
@@ -137,7 +121,6 @@ export default function ResultsPage() {
               </Card>
             </div>
             
-            {/* 4. NUEVA TARJETA para el gráfico de subcategorías */}
             <Card>
               <CardHeader>
                 <CardTitle>Desglose por Subcategoría</CardTitle>
