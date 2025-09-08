@@ -2,22 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-// SOLUCIÓN: Se ajusta la ruta relativa para que sea precisa desde la ubicación del archivo.
-import { getSupabaseBrowserClient } from '../../../../../lib/supabase-client';
-import { type Database } from '../../../../../lib/database.types';
+// --- CORRECCIÓN CLAVE: Usar los alias de ruta configurados en tsconfig.json ---
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
+import { type Database } from '@/lib/database.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
-
-// Definimos un tipo local solo para la data que esperamos dentro del JSON.
+// Tipos locales para la data que esperamos dentro del JSON de la BD.
 type ScoreByCategory = Record<string, { score: number }>;
 type ScoreBySubcategory = Record<string, { score: number; correct: number; total: number }>;
 
-// Usamos el tipo generado por la CLI de Supabase para asegurar consistencia.
-// Hacemos un "type helper" para obtener el tipo de una fila de la tabla 'attempts'.
+// Tipo para una fila de la tabla 'attempts', incluyendo el perfil relacionado.
 type Attempt = Database['public']['Tables']['attempts']['Row'] & {
   profiles: Database['public']['Tables']['profiles']['Row'] | null;
 };
@@ -33,10 +31,9 @@ export default function EvaluationPage() {
   const [error, setError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   
-  // Estado para notificaciones en lugar de 'alert()'.
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Estados para los puntajes del formulario
+  // Estados para los puntajes del formulario.
   const [perfilScore, setPerfilScore] = useState(0);
   const [kaizenScore, setKaizenScore] = useState(0);
   const [herramientasScore, setHerramientasScore] = useState(0);
@@ -45,18 +42,19 @@ export default function EvaluationPage() {
   
   useEffect(() => {
     if (!attemptId) return;
+
     const fetchAttempt = async () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('attempts')
-        .select(`*, profiles(*)`) // Simplificamos la selección
+        .select(`*, profiles(*)`)
         .eq('id', attemptId)
         .single();
 
       if (error) {
         setError("No se pudo encontrar la evaluación.");
       } else if (data) {
-        setAttempt(data); // No se necesita 'as Attempt' porque 'data' ya está tipado.
+        setAttempt(data);
         
         if (data.status === 'completed') {
           setIsReadOnly(true);
@@ -70,16 +68,17 @@ export default function EvaluationPage() {
       }
       setIsLoading(false);
     };
+
     fetchAttempt();
-  }, [attemptId, supabase]); // Dependencia 'supabase' añadida.
+  }, [attemptId, supabase]);
 
   const handleSubmitEvaluation = async () => {
     if (!attempt) return;
     
-    // Hacemos un "casting" seguro de los tipos JSON para poder usarlos.
-    const categoryScoresData = attempt.score_by_category as ScoreByCategory;
-    const categoryScores = Object.values(categoryScoresData).map(c => c.score);
-    const examenAvg = categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length;
+    const categoryScoresData = attempt.score_by_category as ScoreByCategory | null;
+    const categoryScores = categoryScoresData ? Object.values(categoryScoresData).map(c => c.score) : [];
+    const examenAvg = categoryScores.length > 0 ? categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length : 0;
+    
     const pisoAvg = (kaizenScore + herramientasScore + involucramientoScore + sostenimientoScore) / 4;
     const finalScore = (examenAvg * 0.40) + (perfilScore * 0.10) + (pisoAvg * 0.50);
 
@@ -104,8 +103,8 @@ export default function EvaluationPage() {
     }
   };
   
-  const categoryRadarData = attempt ? Object.entries(attempt.score_by_category as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
-  const subcategoryRadarData = attempt ? Object.entries(attempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const categoryRadarData = attempt && attempt.score_by_category ? Object.entries(attempt.score_by_category as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const subcategoryRadarData = attempt && attempt.score_by_subcategory ? Object.entries(attempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
 
   if (isLoading) return <div className="p-8">Cargando evaluación...</div>;
   if (error) return <div className="p-8 text-red-500">{error}</div>;
@@ -114,7 +113,7 @@ export default function EvaluationPage() {
     <div className="min-h-screen bg-gray-50 p-8 space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Evaluación de: {attempt?.profiles?.email}</CardTitle>
+          <CardTitle className="text-2xl">Evaluación de: {attempt?.profiles?.email || 'Usuario'}</CardTitle>
           <CardDescription>
             {isReadOnly 
               ? "Detalles de una evaluación ya completada." 
@@ -149,7 +148,6 @@ export default function EvaluationPage() {
                 </div>
               </div>
             </div>
-             {/* Componente de notificación */}
             {notification && (
               <div className={`p-4 rounded-md text-white ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
                 {notification.message}
