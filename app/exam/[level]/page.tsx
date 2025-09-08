@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+// --- CAMBIO ---
+import { getSupabaseBrowserClient } from '@/lib/supabase-client'; // Importamos la nueva función
+// -----------------
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -77,7 +79,9 @@ const calculateDetailedScores = (
 
 export default function ExamPage() {
   const router = useRouter();
-  const supabase = createClient();
+  // --- CAMBIO ---
+  const supabase = getSupabaseBrowserClient(); // Usamos la nueva función optimizada
+  // -----------------
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [shuffledOptions, setShuffledOptions] = useState<QuestionOption[]>([]);
@@ -86,18 +90,15 @@ export default function ExamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // --- AÑADE ESTE BLOQUE DE CÓDIGO ---
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        // Si no hay sesión, redirige al usuario a la página de inicio/login
         router.push('/');
       }
     };
     checkSession();
   }, [supabase, router]);
-  // ------------------------------------
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -165,14 +166,12 @@ export default function ExamPage() {
       const finalScores = calculateDetailedScores(questions, finalUserAnswers);
 
       const { data, error } = await supabase
-  .from('attempts')
-  .insert({
-    // Ya no enviamos el user_id, la base de datos lo hará por nosotros
-    score_by_category: finalScores.categories,
-    score_by_subcategory: finalScores.subcategories,
-    status: 'pending_review'
-  })
-  //...
+        .from('attempts')
+        .insert({
+          score_by_category: finalScores.categories,
+          score_by_subcategory: finalScores.subcategories,
+          status: 'pending_review'
+        })
         .select('id')
         .single();
 
