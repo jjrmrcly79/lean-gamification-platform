@@ -6,26 +6,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react"; 
-import { createClient } from "@/lib/supabase-client"; 
+import { getSupabaseBrowserClient } from "@/lib/supabase-client"; 
 import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const supabase = getSupabaseBrowserClient();
   const router = useRouter();
 
-  const handleLogin = async () => {
-    console.log("Intentando iniciar sesión con:", { email, password });
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); 
+    setError(null); 
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
 
-    if (error) {
-      alert("Error: " + error.message); 
+    if (signInError) {
+      setError(signInError.message); 
     } else {
+      router.refresh(); 
       router.push('/dashboard');
     }
   };
@@ -45,34 +48,39 @@ export default function LoginForm() {
             Ingresa tus credenciales para acceder.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Correo Electrónico</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="nombre@ejemplo.com" 
-              required 
-              onChange={(e) => setEmail(e.target.value)}
-              value={email}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              required 
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-            />
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleLogin}>
-            Acceder
-          </Button>
-        </CardFooter>
+        <form onSubmit={handleLogin}>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Correo Electrónico</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="nombre@ejemplo.com" 
+                required 
+                onChange={(e) => setEmail(e.target.value)}
+                value={email}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                onChange={(e) => setPassword(e.target.value)}
+                value={password}
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-center text-red-600">{error}</p>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              Acceder
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
