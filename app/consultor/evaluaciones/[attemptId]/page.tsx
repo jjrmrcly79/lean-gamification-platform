@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
+import { type Json } from '@/lib/database.types';
 
 interface ScoreData {
   score: number;
@@ -21,7 +22,7 @@ interface Attempt {
   created_at: string;
   status: string; // <-- Usaremos este campo
   profiles: { email: string } | null;
-  score_by_category: Record<string, ScoreData>;
+ score_by_category: Json;
   score_by_subcategory: Record<string, ScoreData>;
   perfil_score: number | null;
   kaizen_score: number | null;
