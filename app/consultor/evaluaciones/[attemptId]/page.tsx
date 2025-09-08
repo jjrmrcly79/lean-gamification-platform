@@ -1,35 +1,26 @@
-// app/consultor/evaluaciones/[attemptId]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getSupabaseBrowserClient } from '@/lib/supabase-client';
+// SOLUCIÓN: Se ajusta la ruta relativa para que sea precisa desde la ubicación del archivo.
+import { getSupabaseBrowserClient } from '../../../../../lib/supabase-client';
+import { type Database } from '../../../../../lib/database.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
-import { type Json } from '@/lib/database.types';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
-interface ScoreData {
-  score: number;
-  correct: number;
-  total: number;
-}
 
-interface Attempt {
-  id: string;
-  created_at: string;
-  status: string; // <-- Usaremos este campo
-  profiles: { email: string } | null;
- score_by_category: Json;
-  score_by_subcategory: Record<string, ScoreData>;
-  perfil_score: number | null;
-  kaizen_score: number | null;
-  herramientas_score: number | null;
-  involucramiento_score: number | null;
-  sostenimiento_score: number | null;
-}
+// Definimos un tipo local solo para la data que esperamos dentro del JSON.
+type ScoreByCategory = Record<string, { score: number }>;
+type ScoreBySubcategory = Record<string, { score: number; correct: number; total: number }>;
+
+// Usamos el tipo generado por la CLI de Supabase para asegurar consistencia.
+// Hacemos un "type helper" para obtener el tipo de una fila de la tabla 'attempts'.
+type Attempt = Database['public']['Tables']['attempts']['Row'] & {
+  profiles: Database['public']['Tables']['profiles']['Row'] | null;
+};
 
 export default function EvaluationPage() {
   const params = useParams();
@@ -40,10 +31,12 @@ export default function EvaluationPage() {
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // --- NUEVO: Estado para controlar si el formulario es de solo lectura ---
   const [isReadOnly, setIsReadOnly] = useState(false);
+  
+  // Estado para notificaciones en lugar de 'alert()'.
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  // Estados para los puntajes del formulario
   const [perfilScore, setPerfilScore] = useState(0);
   const [kaizenScore, setKaizenScore] = useState(0);
   const [herramientasScore, setHerramientasScore] = useState(0);
@@ -56,18 +49,17 @@ export default function EvaluationPage() {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('attempts')
-        .select(`*, profiles(email)`)
+        .select(`*, profiles(*)`) // Simplificamos la selección
         .eq('id', attemptId)
         .single();
 
       if (error) {
         setError("No se pudo encontrar la evaluación.");
       } else if (data) {
-        setAttempt(data as Attempt);
+        setAttempt(data); // No se necesita 'as Attempt' porque 'data' ya está tipado.
         
-        // --- LÓGICA DE SOLO LECTURA ---
         if (data.status === 'completed') {
-          setIsReadOnly(true); // Si ya está completado, activamos el modo solo lectura
+          setIsReadOnly(true);
         }
 
         setPerfilScore(data.perfil_score || 0);
@@ -79,12 +71,14 @@ export default function EvaluationPage() {
       setIsLoading(false);
     };
     fetchAttempt();
-  }, [attemptId]);
+  }, [attemptId, supabase]); // Dependencia 'supabase' añadida.
 
   const handleSubmitEvaluation = async () => {
-    // ... (la lógica de cálculo se mantiene igual)
     if (!attempt) return;
-    const categoryScores = Object.values(attempt.score_by_category).map(c => c.score);
+    
+    // Hacemos un "casting" seguro de los tipos JSON para poder usarlos.
+    const categoryScoresData = attempt.score_by_category as ScoreByCategory;
+    const categoryScores = Object.values(categoryScoresData).map(c => c.score);
     const examenAvg = categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length;
     const pisoAvg = (kaizenScore + herramientasScore + involucramientoScore + sostenimientoScore) / 4;
     const finalScore = (examenAvg * 0.40) + (perfilScore * 0.10) + (pisoAvg * 0.50);
@@ -103,15 +97,15 @@ export default function EvaluationPage() {
       .eq('id', attemptId);
 
     if (error) {
-      alert("Error al guardar la evaluación.");
+      setNotification({ message: "Error al guardar la evaluación.", type: 'error' });
     } else {
-      alert("Evaluación finalizada y guardada con éxito.");
-      router.push('/consultor/evaluaciones');
+      setNotification({ message: "Evaluación finalizada y guardada con éxito.", type: 'success' });
+      setTimeout(() => router.push('/consultor/evaluaciones'), 2000);
     }
   };
   
-  const categoryRadarData = attempt ? Object.entries(attempt.score_by_category).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
-  const subcategoryRadarData = attempt ? Object.entries(attempt.score_by_subcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const categoryRadarData = attempt ? Object.entries(attempt.score_by_category as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const subcategoryRadarData = attempt ? Object.entries(attempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
 
   if (isLoading) return <div className="p-8">Cargando evaluación...</div>;
   if (error) return <div className="p-8 text-red-500">{error}</div>;
@@ -155,6 +149,12 @@ export default function EvaluationPage() {
                 </div>
               </div>
             </div>
+             {/* Componente de notificación */}
+            {notification && (
+              <div className={`p-4 rounded-md text-white ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+                {notification.message}
+              </div>
+            )}
             <Button onClick={handleSubmitEvaluation} className="w-full" disabled={isReadOnly}>
               {isReadOnly ? "Evaluación Completada" : "Calcular y Guardar Evaluación"}
             </Button>
