@@ -112,11 +112,7 @@ export default function DashboardPage() {
             </CardContent>
             {/* --- SECCIÓN CORREGIDA CON AMBOS BOTONES --- */}
             <CardFooter className="grid grid-cols-2 gap-4">
-              <Link href="/dashboard/results" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Ver Resultados
-                </Button>
-              </Link>
+              
               <Link href="/exam/diagnostico" className="w-full">
                 <Button className="w-full bg-primary text-primary-foreground">
                   Iniciar Diagnóstico

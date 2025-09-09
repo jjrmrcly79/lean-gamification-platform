@@ -125,7 +125,7 @@ export default function ConsultantDashboard() {
                 <TableHead>Email del Usuario</TableHead>
                 <TableHead>Fecha de Evaluación</TableHead>
                 <TableHead>Calificación Final</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
+                <TableHead className="text-right">Acciones</TableHead> {/* <-- Cambiado a "Acciones" (plural) */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -135,11 +135,22 @@ export default function ConsultantDashboard() {
                     <TableCell>{attempt.profiles?.email || 'N/A'}</TableCell>
                     <TableCell>{new Date(attempt.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="font-bold">{attempt.final_score?.toFixed(1) ?? 'N/A'}</TableCell>
-                    <TableCell className="text-right">
+                    
+                    {/* --- INICIO DE LA SECCIÓN MODIFICADA --- */}
+                    <TableCell className="text-right space-x-2">
+                      <Button asChild variant="secondary">
+                        <Link href={`/dashboard/results?attemptId=${attempt.id}`} target="_blank">
+                          Ver Resultados
+                        </Link>
+                      </Button>
                       <Button asChild variant="outline">
-                        <Link href={`/consultor/evaluaciones/${attempt.id}`}>Ver Detalles</Link>
+                        <Link href={`/consultor/evaluaciones/${attempt.id}`}>
+                          Ver Detalles
+                        </Link>
                       </Button>
                     </TableCell>
+                    {/* --- FIN DE LA SECCIÓN MODIFICADA --- */}
+
                   </TableRow>
                 ))
               ) : (
