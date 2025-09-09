@@ -23,12 +23,32 @@ export default function ResultsPage() {
     const fetchAttempts = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data, error } = await supabase
+        // 1. OBTENEMOS EL ROL DEL USUARIO ACTUAL
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Error fetching user profile:", profileError);
+          setLoading(false);
+          return;
+        }
+
+        // 2. CONSTRUIMOS LA CONSULTA BASE
+        let query = supabase
           .from('attempts')
           .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'completed')
-          .order('created_at', { ascending: false });
+          .eq('status', 'completed');
+
+        // 3. APLICAMOS EL FILTRO DE USUARIO SOLO SI NO ES CONSULTOR
+        if (profile?.role !== 'consultant') {
+          query = query.eq('user_id', user.id);
+        }
+        
+        // 4. EJECUTAMOS LA CONSULTA FINAL CON EL ORDENAMIENTO
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
           console.error("Error fetching completed attempts:", error);
