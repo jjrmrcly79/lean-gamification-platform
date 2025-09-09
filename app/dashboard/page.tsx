@@ -25,12 +25,15 @@ export default function DashboardPage() {
   const router = useRouter(); 
   const supabase = getSupabaseBrowserClient(); 
   const [isLoading, setIsLoading] = useState(true);
+  // --- NUEVO: Estado para saber si el usuario ya ha realizado un intento ---
+  const [hasAttempted, setHasAttempted] = useState(false);
 
   useEffect(() => {
-    const checkUserRole = async () => {
+    const checkUserStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
+        // 1. Verificar el rol del usuario (lógica existente)
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -39,15 +42,35 @@ export default function DashboardPage() {
 
         if (profile?.role === 'consultant') {
           router.push('/consultor');
-        } else {
-          setIsLoading(false);
+          return; // Salimos temprano si es consultor
         }
+
+        // --- NUEVO: 2. Verificar si el usuario ya tiene un intento ---
+        const { data: attempt, error: attemptError } = await supabase
+          .from('attempts')
+          .select('id') // Solo necesitamos saber si existe, con el 'id' es suficiente
+          .eq('user_id', user.id)
+          .limit(1) // Optimización: solo nos interesa si hay al menos uno
+          .single(); // .single() es útil aquí, devolverá data o null
+
+        if (attemptError && attemptError.code !== 'PGRST116') {
+            // Ignoramos el error 'PGRST116' que significa "0 filas encontradas"
+            console.error('Error checking for existing attempts:', attemptError);
+        }
+        
+        // Si 'attempt' no es nulo, significa que se encontró un registro
+        if (attempt) {
+            setHasAttempted(true);
+        }
+
+        setIsLoading(false);
+
       } else {
         router.push('/'); // Si no hay usuario, va al login
       }
     };
 
-    checkUserRole();
+    checkUserStatus();
   }, [router, supabase]);
 
   const handleLogout = async () => {
@@ -66,7 +89,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="flex items-center justify-between w-full px-6 py-3 bg-white border-b">
-        <div className="flex items-center gap-3">
+        {/* ... (Tu código del header no cambia) ... */}
+         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="Logo" width={40} height={40} />
           <h1 className="text-xl font-bold text-brand-blue">Diagnóstico Lean</h1>
         </div>
@@ -110,14 +134,25 @@ export default function DashboardPage() {
             <CardContent>
               <p className="text-sm text-gray-500">80 Preguntas</p>
             </CardContent>
-            {/* --- SECCIÓN CORREGIDA CON AMBOS BOTONES --- */}
             <CardFooter className="grid grid-cols-2 gap-4">
-              
-              <Link href="/exam/diagnostico" className="w-full">
-                <Button className="w-full bg-primary text-primary-foreground">
-                  Iniciar Diagnóstico
+              <Link href="/dashboard/results" className="w-full">
+                <Button variant="outline" className="w-full">
+                  Ver Resultados
                 </Button>
               </Link>
+              
+              {/* --- NUEVO: Lógica condicional para el botón de iniciar diagnóstico --- */}
+              {hasAttempted ? (
+                <Button disabled className="w-full">
+                  Diagnóstico Realizado
+                </Button>
+              ) : (
+                <Link href="/exam/diagnostico" className="w-full">
+                  <Button className="w-full bg-primary text-primary-foreground">
+                    Iniciar Diagnóstico
+                  </Button>
+                </Link>
+              )}
             </CardFooter>
           </Card>
         </div>
