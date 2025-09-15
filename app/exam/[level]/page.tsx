@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// --- CAMBIO ---
-import { getSupabaseBrowserClient } from '@/lib/supabase-client'; // Importamos la nueva función
-// -----------------
+import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -13,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import Image from 'next/image';
 
+// --- (Sin cambios en las interfaces) ---
 interface QuestionOption {
   id: string;
   text: string;
@@ -33,6 +32,7 @@ interface Question {
   generated_distractors: string[];
 }
 
+// --- (Sin cambios en la función de cálculo) ---
 const calculateDetailedScores = (
   questions: Question[],
   userAnswers: Record<string, string[]>
@@ -43,6 +43,9 @@ const calculateDetailedScores = (
   };
 
   questions.forEach((q: Question) => {
+    // Solo calificar preguntas que fueron respondidas
+    if (!userAnswers[q.id]) return;
+
     const category = q.category;
     const subcategory = q.subcategory;
     const correctIds = Array.isArray(q.question_data.answer_key.correct_option_id)
@@ -79,9 +82,8 @@ const calculateDetailedScores = (
 
 export default function ExamPage() {
   const router = useRouter();
-  // --- CAMBIO ---
-  const supabase = getSupabaseBrowserClient(); // Usamos la nueva función optimizada
-  // -----------------
+  const supabase = getSupabaseBrowserClient();
+  
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [shuffledOptions, setShuffledOptions] = useState<QuestionOption[]>([]);
@@ -90,6 +92,12 @@ export default function ExamPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // --- NUEVO: Estados para manejar las preguntas brincadas ---
+  const [examPhase, setExamPhase] = useState<'answering' | 'reviewing'>('answering'); // 'answering' o 'reviewing'
+  const [skippedQuestions, setSkippedQuestions] = useState<number[]>([]); // Almacena los índices de las preguntas brincadas
+  const [currentSkippedIndex, setCurrentSkippedIndex] = useState(0); // Para navegar en la fase de revisión
+
+  // --- (Sin cambios en useEffect de sesión y fetchExam) ---
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -121,24 +129,38 @@ export default function ExamPage() {
     };
     fetchExam();
   }, [supabase]);
-
+  
+  // --- MODIFICADO: useEffect para manejar ambas fases del examen ---
   useEffect(() => {
     if (questions.length === 0) return;
-    const currentQuestion = questions[currentQuestionIndex];
-    const correctIds = Array.isArray(currentQuestion.question_data.answer_key.correct_option_id)
-      ? currentQuestion.question_data.answer_key.correct_option_id
-      : [currentQuestion.question_data.answer_key.correct_option_id];
-    const correctOptions = currentQuestion.question_data.options.filter(opt => correctIds.includes(opt.id));
-    const distractorOptions = currentQuestion.generated_distractors.map((text, index) => ({
-      id: `distractor-${currentQuestion.id}-${index}`,
+
+    let questionToShow;
+    if (examPhase === 'answering') {
+      questionToShow = questions[currentQuestionIndex];
+    } else {
+      // En fase de revisión, obtenemos la pregunta del arreglo de brincadas
+      const skippedQuestionRealIndex = skippedQuestions[currentSkippedIndex];
+      questionToShow = questions[skippedQuestionRealIndex];
+    }
+    
+    if (!questionToShow) return;
+
+    const correctIds = Array.isArray(questionToShow.question_data.answer_key.correct_option_id)
+      ? questionToShow.question_data.answer_key.correct_option_id
+      : [questionToShow.question_data.answer_key.correct_option_id];
+    const correctOptions = questionToShow.question_data.options.filter(opt => correctIds.includes(opt.id));
+    const distractorOptions = questionToShow.generated_distractors.map((text, index) => ({
+      id: `distractor-${questionToShow.id}-${index}`,
       text: text,
     }));
+
     const allOptions = [...correctOptions, ...distractorOptions];
     allOptions.sort(() => Math.random() - 0.5);
     setShuffledOptions(allOptions);
     setSelectedAnswers([]);
-  }, [currentQuestionIndex, questions]);
+  }, [currentQuestionIndex, questions, examPhase, currentSkippedIndex, skippedQuestions]);
   
+  // --- (Sin cambios en handleMultiSelectChange) ---
   const handleMultiSelectChange = (checked: boolean, optionId: string) => {
     setSelectedAnswers(prev => {
       if (checked) {
@@ -148,48 +170,119 @@ export default function ExamPage() {
       }
     });
   };
-  
-  const handleNextQuestion = async () => {
-    const currentAnswer = { [questions[currentQuestionIndex].id]: selectedAnswers };
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setUserAnswers(prev => ({ ...prev, ...currentAnswer }));
-      setCurrentQuestionIndex(prev => prev + 1);
+  const finishExam = async (finalAnswers: { [key: string]: string[] }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert("Necesitas iniciar sesión para guardar tus resultados.");
+      return; 
+    }
+    
+    const finalScores = calculateDetailedScores(questions, finalAnswers);
+
+    const { data, error } = await supabase
+      .from('attempts')
+      .insert({
+        score_by_category: finalScores.categories,
+        score_by_subcategory: finalScores.subcategories,
+        status: 'pending_review'
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      alert("Hubo un error al guardar tus resultados. Por favor, intenta de nuevo.");
+      console.error("Error saving attempt:", error);
     } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert("Necesitas iniciar sesión para guardar tus resultados.");
-        return; 
-      }
-      
-      const finalUserAnswers = { ...userAnswers, ...currentAnswer };
-      const finalScores = calculateDetailedScores(questions, finalUserAnswers);
+      router.push('/examen-terminado');
+    }
+  };
 
-      const { data, error } = await supabase
-        .from('attempts')
-        .insert({
-          score_by_category: finalScores.categories,
-          score_by_subcategory: finalScores.subcategories,
-          status: 'pending_review'
-        })
-        .select('id')
-        .single();
+  // --- MODIFICADO: La lógica principal ahora maneja la respuesta y el flujo entre fases ---
+  const handleNextQuestion = async () => {
+    let currentId;
+    
+    // Guardar respuesta dependiendo de la fase
+    if (examPhase === 'answering') {
+      currentId = questions[currentQuestionIndex].id;
+      const currentAnswer = { [currentId]: selectedAnswers };
+      setUserAnswers(prev => ({ ...prev, ...currentAnswer }));
 
-      if (error) {
-        alert("Hubo un error al guardar tus resultados. Por favor, intenta de nuevo.");
-        console.error("Error saving attempt:", error);
+      // Avanzar en la primera vuelta
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1);
       } else {
-        router.push('/examen-terminado');
+        // Fin de la primera vuelta, ¿hay preguntas brincadas?
+        if (skippedQuestions.length > 0) {
+          setExamPhase('reviewing');
+        } else {
+          await finishExam({ ...userAnswers, ...currentAnswer });
+        }
+      }
+    } else { // Estamos en fase 'reviewing'
+      const skippedQuestionRealIndex = skippedQuestions[currentSkippedIndex];
+      currentId = questions[skippedQuestionRealIndex].id;
+      const currentAnswer = { [currentId]: selectedAnswers };
+      setUserAnswers(prev => ({ ...prev, ...currentAnswer }));
+
+      // Remover la pregunta del arreglo de brincadas (opcional pero recomendado)
+      const updatedSkipped = skippedQuestions.filter((_, index) => index !== currentSkippedIndex);
+      // setSkippedQuestions(updatedSkipped); // Descomentar si quieres que no se pueda regresar a ella
+
+      // Avanzar a la siguiente pregunta brincada
+      if (currentSkippedIndex < skippedQuestions.length - 1) {
+        setCurrentSkippedIndex(prev => prev + 1);
+      } else {
+        await finishExam({ ...userAnswers, ...currentAnswer });
       }
     }
   };
 
+  // --- NUEVO: Función para manejar el botón de "Brincar" ---
+  const handleSkipQuestion = async () => {
+    // Solo se puede brincar en la primera vuelta
+    if (examPhase !== 'answering') return;
+    
+    // Guardamos el índice de la pregunta actual para después
+    if (!skippedQuestions.includes(currentQuestionIndex)) {
+      setSkippedQuestions(prev => [...prev, currentQuestionIndex]);
+    }
+    
+    // Avanzamos a la siguiente pregunta o iniciamos la fase de revisión
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      if (skippedQuestions.length > 0 || !skippedQuestions.includes(currentQuestionIndex)) {
+         setExamPhase('reviewing');
+      } else {
+         await finishExam(userAnswers);
+      }
+    }
+  };
+
+
+  // --- (Sin cambios en los estados de carga y error) ---
   if (isLoading) return <div className="flex items-center justify-center h-screen text-lg font-medium text-[#1A237E]">Cargando diagnóstico...</div>;
   if (error) return <div className="flex items-center justify-center h-screen text-lg font-medium text-red-600">{error}</div>;
   if (questions.length === 0) return <div className="flex items-center justify-center h-screen text-lg font-medium text-[#1A237E]">No hay preguntas disponibles.</div>;
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progressValue = ((currentQuestionIndex + 1) / questions.length) * 100;
+  // --- MODIFICADO: Lógica para mostrar la pregunta correcta y el progreso ---
+  const isReviewing = examPhase === 'reviewing';
+  const questionIndexForDisplay = isReviewing ? skippedQuestions[currentSkippedIndex] : currentQuestionIndex;
+  const currentQuestion = questions[questionIndexForDisplay];
+  
+  let progressValue;
+  let progressText;
+
+  if (isReviewing) {
+    const answeredInReview = currentSkippedIndex + 1;
+    progressValue = (answeredInReview / skippedQuestions.length) * 100;
+    progressText = `Revisando ${answeredInReview} de ${skippedQuestions.length}`;
+  } else {
+    progressValue = ((currentQuestionIndex + 1) / questions.length) * 100;
+    progressText = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+  }
+
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-white p-6 md:p-10">
@@ -202,11 +295,13 @@ export default function ExamPage() {
       <Card className="w-full max-w-3xl border-gray-200 shadow-lg">
         <CardHeader className="bg-[#1A237E] text-white p-6 rounded-t-lg">
           <Progress value={progressValue} className="mb-4 h-2 bg-white/30 [&>*]:bg-white" />
-          <CardTitle className="text-2xl font-bold">Pregunta {currentQuestionIndex + 1} de {questions.length}</CardTitle>
+          {/* --- MODIFICADO: Título dinámico --- */}
+          <CardTitle className="text-2xl font-bold">{isReviewing ? 'Revisando Preguntas Brincadas' : progressText}</CardTitle>
           <CardDescription className="text-white text-opacity-80">Categoría: {currentQuestion.category} / {currentQuestion.subcategory}</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <p className="text-xl font-semibold mb-8 text-[#1A237E] leading-relaxed">{currentQuestion.question_data.prompt}</p>
+          {/* --- (El renderizado de opciones no cambia) --- */}
           {currentQuestion.question_data.type === 'multi_select' ? (
             <div className="flex flex-col gap-5">
               {shuffledOptions.map((option) => (
@@ -227,9 +322,21 @@ export default function ExamPage() {
             </RadioGroup>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end p-6 border-t border-gray-100">
-          <Button onClick={handleNextQuestion} disabled={selectedAnswers.length === 0} className="px-8 py-3 text-lg font-semibold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-md transition-colors duration-200">
-            {currentQuestionIndex < questions.length - 1 ? 'Siguiente' : 'Finalizar Diagnóstico'}
+        <CardFooter className="flex justify-between items-center p-6 border-t border-gray-100">
+          {/* --- NUEVO: Botón para Brincar Pregunta --- */}
+          {examPhase === 'answering' && (
+            <Button onClick={handleSkipQuestion} variant="ghost" className="px-6 py-3 text-lg font-semibold text-gray-600 hover:bg-gray-100">
+              Brincar
+            </Button>
+          )}
+
+          <Button 
+            onClick={handleNextQuestion} 
+            disabled={selectedAnswers.length === 0} 
+            className="px-8 py-3 text-lg font-semibold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-md transition-colors duration-200 ml-auto"
+          >
+            {/* --- MODIFICADO: Texto del botón dinámico --- */}
+            {currentQuestionIndex < questions.length - 1 && examPhase === 'answering' ? 'Siguiente' : 'Finalizar Diagnóstico'}
           </Button>
         </CardFooter>
       </Card>
