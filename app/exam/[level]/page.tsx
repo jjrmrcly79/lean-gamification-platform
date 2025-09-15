@@ -269,7 +269,7 @@ export default function ExamPage() {
                             {formatTime(elapsedTime)}
                         </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold">{isReviewing ? 'Revisando Preguntas Brincadas' : progressText}</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{isReviewing ? 'Revisando Preguntas Pendientes' : progressText}</CardTitle>
                     <div className="flex justify-between items-center">
                       <CardDescription className="text-white text-opacity-80">Categoría: {currentQuestion.category} / {currentQuestion.subcategory}</CardDescription>
                       {/* --- CONTADOR BRINCADAS: Mostrar el conteo --- */}
@@ -304,7 +304,7 @@ export default function ExamPage() {
                 </CardContent>
                 <CardFooter className="flex justify-between items-center p-6 border-t border-gray-100">
                     {examPhase === 'answering' && (
-                        <Button onClick={handleSkipQuestion} variant="ghost" className="px-6 py-3 text-lg font-semibold text-gray-600 hover:bg-gray-100"> Brincar </Button>
+                        <Button onClick={handleSkipQuestion} variant="ghost" className="px-6 py-3 text-lg font-semibold text-gray-600 hover:bg-gray-100"> Saltar </Button>
                     )}
                     <Button onClick={handleNextQuestion} disabled={selectedAnswers.length === 0} className="px-8 py-3 text-lg font-semibold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-md transition-colors duration-200 ml-auto">
                         {currentQuestionIndex < questions.length - 1 && examPhase === 'answering' ? 'Siguiente' : 'Finalizar Diagnóstico'}
