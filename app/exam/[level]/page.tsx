@@ -275,7 +275,7 @@ export default function ExamPage() {
                       {/* --- CONTADOR BRINCADAS: Mostrar el conteo --- */}
                       {skippedQuestions.length > 0 && (
                         <div className="text-sm font-semibold bg-yellow-400 text-black px-3 py-1 rounded-full">
-                          Brincadas: {skippedQuestions.length}
+                          Pendientes: {skippedQuestions.length}
                         </div>
                       )}
                     </div>
