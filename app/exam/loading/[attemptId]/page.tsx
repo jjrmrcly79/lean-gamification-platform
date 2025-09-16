@@ -12,7 +12,7 @@ import animationData from "../../../../public/animation.json"; // Importamos el 
 
 // Hook personalizado para el polling (comprobar el estado cada X segundos)
 function useInterval(callback: () => void, delay: number | null) {
-  const savedCallback = useRef<() => void>();
+  const savedCallback = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     savedCallback.current = callback;
