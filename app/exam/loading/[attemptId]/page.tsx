@@ -41,6 +41,19 @@ export default function LoadingExamPage() {
   // --- NUEVO ESTADO: Para controlar la vista ---
   const [pageState, setPageState] = useState<'generating' | 'ready'>('generating');
 
+  // --- NUEVO ESTADO Y EFECTO PARA LA ANIMACIÓN FLUIDA ---
+  const [isAnimationVisible, setIsAnimationVisible] = useState(false);
+
+  useEffect(() => {
+    // Este truco retrasa la carga de Lottie un instante para que no se congele la UI inicial.
+    const timer = setTimeout(() => {
+      setIsAnimationVisible(true);
+    }, 100); // 100ms es suficiente
+
+    return () => clearTimeout(timer); // Limpieza al desmontar el componente
+  }, []);
+  // --- FIN DEL NUEVO CÓDIGO ---
+  
   // Obtener el nombre del usuario
   useEffect(() => {
     const fetchUserProfile = async () => {
