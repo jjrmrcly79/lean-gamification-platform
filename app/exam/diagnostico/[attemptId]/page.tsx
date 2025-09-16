@@ -75,7 +75,7 @@ export default function ExamPage() {
     const router = useRouter();
     const params = useParams(); // Hook para leer parámetros de la URL
     const supabase = getSupabaseBrowserClient();
-    const { attemptId } = params; // Obtenemos el ID del intento desde la URL
+    const attemptId = Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId; // Obtenemos el ID del intento desde la URL
 
     // --- (Todos tus estados existentes se mantienen igual) ---
     const [questions, setQuestions] = useState<Question[]>([]);
@@ -129,7 +129,7 @@ export default function ExamPage() {
                 return;
             }
 
-            const examData = data.questions_data as Question[];
+            const examData = data.questions_data as unknown as Question[];
             examData.sort(() => Math.random() - 0.5);
             setQuestions(examData);
             setIsLoading(false);
