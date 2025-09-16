@@ -1,8 +1,11 @@
+// lib/supabase-client.ts
+
 import { createBrowserClient } from '@supabase/ssr'
-import { type Database } from './database.types' // 1. Importa los tipos
+// --- CAMBIO IMPORTANTE: Importa tus nuevos tipos ---
+import { Database } from '@/types/supabase' // Asegúrate de que la ruta sea correcta
 
 export function getSupabaseBrowserClient() {
-  // 2. Pasa el tipo 'Database' al crear el cliente
+  // --- CAMBIO IMPORTANTE: Pasa el tipo <Database> al cliente ---
   return createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
