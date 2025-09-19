@@ -23,6 +23,29 @@ function getErrorMessage(e: unknown): string {
   try { return JSON.stringify(e); } catch { return String(e); }
 }
 
+/** Extrae el detalle de un error de supabase.functions.invoke sin usar `any`. */
+async function getInvokeErrorDetails(err: unknown): Promise<string> {
+  type MaybeInvokeError = { message?: unknown; context?: { response?: Response } };
+
+  if (typeof err === 'object' && err !== null) {
+    const e = err as MaybeInvokeError;
+    const msg = typeof e.message === 'string' ? e.message : undefined;
+    const resp = e.context?.response;
+    if (resp) {
+      try {
+        const text = await resp.text();
+        return text || msg || 'Edge Function error';
+      } catch {
+        return msg || 'Edge Function error';
+      }
+    }
+    if (msg) return msg;
+  }
+  try { return JSON.stringify(err); } catch { return String(err); }
+}
+
+
+
 export default function PDFUploader() {
   const supabase = getSupabaseBrowserClient();
   const [file, setFile] = useState<File | null>(null);
@@ -109,18 +132,11 @@ export default function PDFUploader() {
     body: { fileUrl: publicUrl, mode: 'analyze' },
   });
 
-  // Manejo de error con detalle del body devuelto por la función (status 4xx/5xx)
   if (res.error) {
-    let details = res.error.message;
-    try {
-      const serverResp: any = (res.error as any).context?.response;
-      if (serverResp) {
-        const txt = await serverResp.text();      // cuerpo: normalmente { "error": "..." }
-        details = txt || details;
-      }
-    } catch { /* ignore */ }
+    const details = await getInvokeErrorDetails(res.error);
     throw new Error(details);
   }
+
 
   // 4) Éxito: guardar temas
   const data = res.data as { temas: string[] };
@@ -162,19 +178,25 @@ export default function PDFUploader() {
       const publicUrl = pub.publicUrl;
       if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
 
-      const { data, error: invokeError } = await supabase.functions.invoke('pdf-analyzer', {
-        body: {
-          fileUrl: publicUrl,
-          mode: 'generate_questions',
-          // Si tu function acepta array, puedes pasar initialTopics directo:
-          // validated_topics: initialTopics,
-          validated_topics: JSON.stringify(initialTopics),
-        },
-      });
-      if (invokeError) throw invokeError;
+      const res2 = await supabase.functions.invoke('pdf-analyzer', {
+  body: {
+    fileUrl: publicUrl,
+    mode: 'generate_questions',
+    // Si tu function acepta array directamente:
+    // validated_topics: initialTopics,
+    validated_topics: JSON.stringify(initialTopics),
+  },
+});
 
-      setGeneratedQuestions(data.preguntas ?? []);
-      setStatusMessage('Preguntas generadas. Listas para guardar en Supabase.');
+if (res2.error) {
+  const details = await getInvokeErrorDetails(res2.error);
+  throw new Error(details);
+}
+
+const data2 = res2.data as { preguntas: GeneratedQuestion[] };
+setGeneratedQuestions(data2.preguntas ?? []);
+setStatusMessage('Preguntas generadas. Listas para guardar en Supabase.');
+
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       console.error('Error generando preguntas:', err);
