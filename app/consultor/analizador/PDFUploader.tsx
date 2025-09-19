@@ -154,3 +154,30 @@ export default function PDFUploader() {
       
       {/* --- PASO 4: MOSTRAR Y GUARDAR PREGUNTAS --- */}
       {generatedQuestions.length > 0 && !isLoading && (
+         <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Preguntas Generadas</h2>
+          <div className="space-y-4">
+            {generatedQuestions.map((q, index) => (
+              <div key={index} className="bg-white p-4 border border-gray-200 rounded-lg">
+                <p className="font-bold mb-2 text-gray-800">{index + 1}. {q.pregunta}</p>
+                <ul className="space-y-1">
+                  {q.opciones.map((opt) => (
+                    <li key={opt} className={`pl-4 py-1 rounded text-sm ${opt === q.respuesta_correcta ? 'bg-green-100 text-green-800' : 'text-gray-600'}`}>
+                      {opt}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <button 
+            onClick={saveQuestionsToSupabase}
+            className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            Guardar Preguntas en Supabase
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
