@@ -157,14 +157,13 @@ if (!resp.ok) {
   }
 }
 
-const data = JSON.parse(bodyText) as { temas: string[] };
-
 
  // 4) Éxito: guardar temas
-const analyzeRes = res.data as { temas: string[] };
+const analyzeRes = JSON.parse(bodyText) as { temas: string[] };
 await saveTopicsToDatabase(analyzeRes.temas, file.name);
 setInitialTopics(analyzeRes.temas);
 setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
+
 
 
 } catch (error: unknown) {
