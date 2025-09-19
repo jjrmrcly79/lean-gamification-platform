@@ -160,11 +160,12 @@ if (!resp.ok) {
 const data = JSON.parse(bodyText) as { temas: string[] };
 
 
-  // 4) Éxito: guardar temas
-  const data = res.data as { temas: string[] };
-  await saveTopicsToDatabase(data.temas, file.name);
-  setInitialTopics(data.temas);
-  setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
+ // 4) Éxito: guardar temas
+const analyzeRes = res.data as { temas: string[] };
+await saveTopicsToDatabase(analyzeRes.temas, file.name);
+setInitialTopics(analyzeRes.temas);
+setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
+
 
 } catch (error: unknown) {
   const msg = getErrorMessage(error);
