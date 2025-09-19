@@ -33,6 +33,22 @@ export default function PDFUploader() {
     }
   };
 
+  // --- NUEVA FUNCIÓN PARA GUARDAR LOS TEMAS ---
+  const saveTopicsToDatabase = async (topics: string[], documentName: string) => {
+    if (topics.length === 0) return;
+    
+    const { error } = await supabase.from('temas_generados').insert({
+      temas: topics,
+      documento_origen: documentName
+    });
+
+    if (error) {
+      // Si falla, mostramos un error pero no detenemos el flujo.
+      setStatusMessage(`Error al guardar temas: ${error.message}. Puedes continuar generando preguntas.`);
+      console.error("Error saving topics:", error);
+    }
+  };
+
   const startAnalysisProcess = async () => {
     if (!file) {
       alert("Por favor, selecciona un archivo PDF primero.");
@@ -62,8 +78,10 @@ export default function PDFUploader() {
       
       if (invokeError) throw invokeError;
 
+      // --- CAMBIO: Guardamos los temas y luego actualizamos el estado ---
+      await saveTopicsToDatabase(data.temas, file.name);
       setInitialTopics(data.temas);
-      setStatusMessage('Paso 3/3: Temas detectados. Ahora puedes generar preguntas.');
+      setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
 
     } catch (error) {
       const typedError = error as { message: string };
@@ -75,15 +93,13 @@ export default function PDFUploader() {
   };
 
   const generateQuestionsProcess = async () => {
-    if (!file) return;
+    if (!file || initialTopics.length === 0) return;
     setIsLoading(true);
     setStatusMessage('Enviando temas a la IA para generar preguntas...');
-
-     const filePath = `public/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, file);
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from('documentos-pdf').getPublicUrl(filePath);
+    
+    const { data: { publicUrl } } = supabase.storage
+        .from('documentos-pdf')
+        .getPublicUrl(file.name); // Asumimos que el archivo ya está subido
 
       const { data, error: invokeError } = await supabase.functions.invoke('pdf-analyzer', {
         body: { 
@@ -99,7 +115,6 @@ export default function PDFUploader() {
       setStatusMessage('Preguntas generadas. Listas para guardar en Supabase.');
       setIsLoading(false);
   };
-
 
   const saveQuestionsToSupabase = async () => {
     if (generatedQuestions.length === 0) return;
@@ -129,6 +144,7 @@ export default function PDFUploader() {
 
   return (
     <div className="space-y-6">
+      {/* El JSX no cambia, solo la lógica de las funciones */}
       <h1 className="text-3xl font-bold">Analizador de PDF con IA (con OCR)</h1>
       
       <div>
@@ -153,13 +169,13 @@ export default function PDFUploader() {
           onClick={startAnalysisProcess}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          Analizar Temas del PDF
+          Analizar y Guardar Temas del PDF
         </button>
       )}
       
       {initialTopics.length > 0 && generatedQuestions.length === 0 && !isLoading && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Temas Detectados</h2>
+          <h2 className="text-xl font-semibold">Temas Detectados y Guardados</h2>
           <div className="bg-gray-50 p-4 rounded-lg border">
             <ul className="list-disc list-inside space-y-1 text-gray-700">
               {initialTopics.map(topic => <li key={topic}>{topic}</li>)}
