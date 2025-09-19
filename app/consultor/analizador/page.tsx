@@ -24,7 +24,8 @@ interface AnalyzerExtraData {
   validated_topics?: string[];
 }
 
-function PdfAnalyzerPage() { // Renombramos el componente para usarlo adentro
+// El componente principal ahora es una función normal, no un default export.
+function PdfAnalyzerPage() {
   const supabase = getSupabaseBrowserClient();
   const [file, setFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState<string>('');
@@ -126,7 +127,7 @@ function PdfAnalyzerPage() { // Renombramos el componente para usarlo adentro
             type="file" 
             accept=".pdf" 
             onChange={handleFileChange} 
-            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file-border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
         </div>
         {(isLoading || statusMessage) && 
@@ -182,7 +183,7 @@ function PdfAnalyzerPage() { // Renombramos el componente para usarlo adentro
   );
 }
 
-// --- PASO 2: Exportar el componente de forma dinámica y deshabilitar el renderizado en servidor (SSR) ---
+// --- PASO 2: Exportar el componente de forma dinámica, deshabilitando el renderizado en servidor (SSR) ---
 export default dynamic(() => Promise.resolve(PdfAnalyzerPage), {
   ssr: false,
 });
