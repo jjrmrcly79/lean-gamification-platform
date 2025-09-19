@@ -45,25 +45,30 @@ export default function PDFUploader() {
   };
 
   const saveTopicsToDatabase = async (topics: string[], documentName: string) => {
-    if (topics.length === 0) return;
+  if (topics.length === 0) return;
 
-    const { data: s } = await supabase.auth.getSession();
-    if (!s.session) {
-      setStatusMessage('Debes iniciar sesión para guardar temas.');
-      return;
-    }
+  // Obtiene la sesión UNA sola vez
+  const { data: s } = await supabase.auth.getSession();
+  console.log('SESSION UID =>', s.session?.user?.id);
 
-    const newTopicEntry: TemaGeneradoInsert = {
-      temas: topics,
-      documento_origen: documentName
-    };
+  if (!s.session) {
+    setStatusMessage('Debes iniciar sesión para guardar temas.');
+    return;
+  }
 
-    const { error } = await supabase.from('temas_generados').insert(newTopicEntry);
-    if (error) {
-      setStatusMessage(`Error al guardar temas: ${error.message}. Puedes continuar.`);
-      console.error('Error saving topics:', error);
-    }
+  const newTopicEntry: TemaGeneradoInsert = {
+    temas: topics,
+    documento_origen: documentName, // no mandes user_id; lo pone el DEFAULT auth.uid()
   };
+
+  const { error } = await supabase.from('temas_generados').insert(newTopicEntry);
+
+  if (error) {
+    setStatusMessage(`Error al guardar temas: ${error.message}. Puedes continuar.`);
+    console.error('Error saving topics:', error);
+  }
+};
+
 
   const startAnalysisProcess = async () => {
     if (!file) {
