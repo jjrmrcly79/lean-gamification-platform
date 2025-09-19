@@ -29,7 +29,7 @@ export default function HomePage() {
         
         // Redirige según el rol
         if (profile?.role === 'consultant') {
-          router.push('/consultor/evaluaciones');
+          router.push('/consultor');
         } else {
           router.push('/dashboard'); // Asume que es estudiante
         }
