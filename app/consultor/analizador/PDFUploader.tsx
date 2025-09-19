@@ -28,7 +28,6 @@ export default function PDFUploader() {
     if (selectedFile) {
       setFile(selectedFile);
       setStatusMessage('Archivo seleccionado. Listo para analizar.');
-      // Limpiamos los resultados anteriores
       setInitialTopics([]);
       setGeneratedQuestions([]);
     }
@@ -41,9 +40,8 @@ export default function PDFUploader() {
     }
     
     setIsLoading(true);
-    setStatusMessage(`Enviando archivo a la IA (${mode})... Esto puede tardar un poco.`);
+    setStatusMessage(`Enviando archivo a la IA (${mode})... Esto puede tardar hasta un minuto.`);
 
-    // Creamos un FormData para enviar el archivo
     const formData = new FormData();
     formData.append('file', file);
     formData.append('mode', mode);
@@ -54,7 +52,7 @@ export default function PDFUploader() {
 
     try {
       const { data, error } = await supabase.functions.invoke('pdf-analyzer', {
-        body: formData, // Enviamos el archivo directamente
+        body: formData,
       });
 
       if (error) throw error;
@@ -78,22 +76,81 @@ export default function PDFUploader() {
   };
 
   const saveQuestionsToSupabase = async () => {
-    // ... (Esta función se queda exactamente igual que antes)
+    if (generatedQuestions.length === 0) return;
+    setIsLoading(true);
+    setStatusMessage('Guardando preguntas en Supabase...');
+    
+    const questionsToInsert: MasterQuestionInsert[] = generatedQuestions.map(q => ({
+        id: crypto.randomUUID(),
+        category: 'PDF Generado',
+        subcategory: file?.name.slice(0, 50) || 'desconocido',
+        question_data: {
+            prompt: q.pregunta,
+            options: q.opciones.map((opt: string, index: number) => ({ id: index + 1, text: opt })),
+            answer_key: { correct_option_id: q.opciones.findIndex((opt: string) => opt === q.respuesta_correcta) + 1 }
+        }
+    }));
+
+    const { error } = await supabase.from('master_questions').insert(questionsToInsert);
+
+    if (error) {
+        setStatusMessage("Error al guardar las preguntas: " + error.message);
+    } else {
+        setStatusMessage("¡Éxito! Las preguntas fueron guardadas en la tabla 'master_questions'.");
+    }
+    setIsLoading(false);
   };
 
   return (
-     <div className="space-y-6">
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold">Analizador de PDF con IA (con OCR)</h1>
+      
+      {/* --- PASO 1: SUBIR ARCHIVO --- */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Paso 1: Sube cualquier documento PDF (texto o escaneado)</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Paso 1: Sube cualquier documento PDF</label>
         <input 
           type="file" 
           accept=".pdf" 
           onChange={handleFileChange} 
-          className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file-border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
       </div>
-      {/* ... (El resto del JSX se queda exactamente igual que antes) ... */}
-    </div>
-  );
-}
+
+      {/* --- Muestra de estado general --- */}
+      {(isLoading || statusMessage) && 
+          <div className="bg-gray-100 p-4 rounded-lg text-center">
+            <p className="text-sm text-gray-600">{statusMessage}</p>
+            {isLoading && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto mt-2"></div>}
+          </div>
+      }
+      
+      {/* --- PASO 2: ANALIZAR TEMAS --- */}
+      {file && initialTopics.length === 0 && !isLoading && (
+        <button 
+          onClick={() => callPdfAnalyzer('analyze')}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+        >
+          Analizar Temas del PDF
+        </button>
+      )}
+      
+      {/* --- PASO 3: GENERAR PREGUNTAS --- */}
+      {initialTopics.length > 0 && generatedQuestions.length === 0 && !isLoading && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Temas Detectados</h2>
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <ul className="list-disc list-inside space-y-1 text-gray-700">
+              {initialTopics.map(topic => <li key={topic}>{topic}</li>)}
+            </ul>
+          </div>
+          <button 
+            onClick={() => callPdfAnalyzer('generate_questions')}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+          >
+            Generar Preguntas de estos Temas
+          </button>
+        </div>
+      )}
+      
+      {/* --- PASO 4: MOSTRAR Y GUARDAR PREGUNTAS --- */}
+      {generatedQuestions.length > 0 && !isLoading && (
