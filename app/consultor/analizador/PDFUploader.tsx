@@ -14,6 +14,15 @@ interface GeneratedQuestion {
   respuesta_correcta: string;
 }
 
+/** Helper para errores tipados sin any */
+function getErrorMessage(e: unknown): string {
+  if (typeof e === 'object' && e !== null && 'message' in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === 'string') return m;
+  }
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+
 export default function PDFUploader() {
   const supabase = getSupabaseBrowserClient();
   const [file, setFile] = useState<File | null>(null);
@@ -62,7 +71,6 @@ export default function PDFUploader() {
       return;
     }
 
-    // (opcional) exigir sesión también aquí
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) {
       setStatusMessage('Debes iniciar sesión para analizar y subir el PDF.');
@@ -76,17 +84,14 @@ export default function PDFUploader() {
       const filePath = `public/${Date.now()}-${file.name}`;
       setUploadedPath(filePath);
 
-      const { error: uploadError } = await supabase
-        .storage
+      const { error: uploadError } = await supabase.storage
         .from('documentos-pdf')
         .upload(filePath, file);
-
       if (uploadError) throw uploadError;
 
       setStatusMessage('Paso 2/3: Archivo subido. Enviando a la IA para análisis...');
 
-      const { data: pub } = supabase
-        .storage
+      const { data: pub } = supabase.storage
         .from('documentos-pdf')
         .getPublicUrl(filePath);
       const publicUrl = pub.publicUrl;
@@ -100,9 +105,10 @@ export default function PDFUploader() {
       await saveTopicsToDatabase(data.temas, file.name);
       setInitialTopics(data.temas);
       setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
       console.error('Error en el proceso:', error);
-      setStatusMessage(`Error: ${error?.message ?? 'desconocido'}`);
+      setStatusMessage(`Error: ${msg}`);
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +117,6 @@ export default function PDFUploader() {
   const generateQuestionsProcess = async () => {
     if (!file || initialTopics.length === 0) return;
 
-    // (opcional) exigir sesión también aquí
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) {
       setStatusMessage('Debes iniciar sesión para generar preguntas.');
@@ -127,8 +132,7 @@ export default function PDFUploader() {
     setStatusMessage('Enviando temas a la IA para generar preguntas...');
 
     try {
-      const { data: pub } = supabase
-        .storage
+      const { data: pub } = supabase.storage
         .from('documentos-pdf')
         .getPublicUrl(uploadedPath);
       const publicUrl = pub.publicUrl;
@@ -138,18 +142,19 @@ export default function PDFUploader() {
         body: {
           fileUrl: publicUrl,
           mode: 'generate_questions',
-          // Usa el formato que espere tu Edge Function:
+          // Si tu function acepta array, puedes pasar initialTopics directo:
           // validated_topics: initialTopics,
           validated_topics: JSON.stringify(initialTopics),
         },
       });
       if (invokeError) throw invokeError;
 
-      setGeneratedQuestions(data.preguntas || []);
+      setGeneratedQuestions(data.preguntas ?? []);
       setStatusMessage('Preguntas generadas. Listas para guardar en Supabase.');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
       console.error('Error generando preguntas:', err);
-      setStatusMessage(`Error al generar preguntas: ${err?.message ?? 'desconocido'}`);
+      setStatusMessage(`Error al generar preguntas: ${msg}`);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +163,6 @@ export default function PDFUploader() {
   const saveQuestionsToSupabase = async () => {
     if (generatedQuestions.length === 0) return;
 
-    // (opcional) exigir sesión también aquí
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) {
       setStatusMessage('Debes iniciar sesión para guardar preguntas.');
@@ -184,8 +188,9 @@ export default function PDFUploader() {
       if (error) throw error;
 
       setStatusMessage("¡Éxito! Las preguntas fueron guardadas en la tabla 'master_questions'.");
-    } catch (err: any) {
-      setStatusMessage('Error al guardar las preguntas: ' + (err?.message ?? 'desconocido'));
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
+      setStatusMessage('Error al guardar las preguntas: ' + msg);
     } finally {
       setIsLoading(false);
     }
