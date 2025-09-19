@@ -3,6 +3,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic'; // --- PASO 1: Importar 'dynamic'
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -13,19 +14,17 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 type MasterQuestionInsert = Database['public']['Tables']['master_questions']['Insert'];
 
-// --- SOLUCIÓN: Definimos un tipo específico para las preguntas generadas ---
 interface GeneratedQuestion {
   pregunta: string;
   opciones: string[];
   respuesta_correcta: string;
 }
 
-// --- SOLUCIÓN: Definimos un tipo para los datos extra de la función ---
 interface AnalyzerExtraData {
   validated_topics?: string[];
 }
 
-export default function PdfAnalyzerPage() {
+function PdfAnalyzerPage() { // Renombramos el componente para usarlo adentro
   const supabase = getSupabaseBrowserClient();
   const [file, setFile] = useState<File | null>(null);
   const [textContent, setTextContent] = useState<string>('');
@@ -33,7 +32,6 @@ export default function PdfAnalyzerPage() {
   const [statusMessage, setStatusMessage] = useState('');
   
   const [initialTopics, setInitialTopics] = useState<string[]>([]);
-  // --- SOLUCIÓN: Usamos nuestro nuevo tipo en lugar de 'any[]' ---
   const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +71,6 @@ export default function PdfAnalyzerPage() {
     reader.readAsArrayBuffer(fileToProcess);
   };
   
-  // --- SOLUCIÓN: Usamos nuestro tipo para los datos extra ---
   const callPdfAnalyzer = async (mode: 'analyze' | 'generate_questions', extra_data: AnalyzerExtraData = {}) => {
     if (!textContent) return;
     setIsLoading(true);
@@ -86,7 +83,6 @@ export default function PdfAnalyzerPage() {
       if (mode === 'analyze') setInitialTopics(data.temas);
       if (mode === 'generate_questions') setGeneratedQuestions(data.preguntas);
     } catch (error) {
-      // Usamos 'unknown' que es más seguro que 'any' y le decimos a ESLint que está bien
       const typedError = error as { message: string };
       setStatusMessage(`Error: ${typedError.message}`);
     } finally {
@@ -185,3 +181,8 @@ export default function PdfAnalyzerPage() {
     </div>
   );
 }
+
+// --- PASO 2: Exportar el componente de forma dinámica y deshabilitar el renderizado en servidor (SSR) ---
+export default dynamic(() => Promise.resolve(PdfAnalyzerPage), {
+  ssr: false,
+});
