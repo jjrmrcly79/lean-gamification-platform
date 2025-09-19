@@ -86,37 +86,56 @@ export default function PDFUploader() {
     setStatusMessage('Paso 1/3: Subiendo archivo a Supabase Storage...');
 
     try {
-      const filePath = `public/${Date.now()}-${file.name}`;
-      setUploadedPath(filePath);
+  const filePath = `public/${Date.now()}-${file.name}`;
+  setUploadedPath(filePath);
 
-      const { error: uploadError } = await supabase.storage
-        .from('documentos-pdf')
-        .upload(filePath, file);
-      if (uploadError) throw uploadError;
+  // 1) Subir a Storage
+  const { error: uploadError } = await supabase.storage
+    .from('documentos-pdf')
+    .upload(filePath, file);
+  if (uploadError) throw uploadError;
 
-      setStatusMessage('Paso 2/3: Archivo subido. Enviando a la IA para análisis...');
+  setStatusMessage('Paso 2/3: Archivo subido. Enviando a la IA para análisis...');
 
-      const { data: pub } = supabase.storage
-        .from('documentos-pdf')
-        .getPublicUrl(filePath);
-      const publicUrl = pub.publicUrl;
-      if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
+  // 2) Obtener URL pública (si tu bucket es privado, cambia a createSignedUrl)
+  const { data: pub } = supabase.storage
+    .from('documentos-pdf')
+    .getPublicUrl(filePath);
+  const publicUrl = pub.publicUrl;
+  if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
 
-      const { data, error: invokeError } = await supabase.functions.invoke('pdf-analyzer', {
-        body: { fileUrl: publicUrl, mode: 'analyze' },
-      });
-      if (invokeError) throw invokeError;
+  // 3) Invocar Edge Function
+  const res = await supabase.functions.invoke('pdf-analyzer', {
+    body: { fileUrl: publicUrl, mode: 'analyze' },
+  });
 
-      await saveTopicsToDatabase(data.temas, file.name);
-      setInitialTopics(data.temas);
-      setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      console.error('Error en el proceso:', error);
-      setStatusMessage(`Error: ${msg}`);
-    } finally {
-      setIsLoading(false);
-    }
+  // Manejo de error con detalle del body devuelto por la función (status 4xx/5xx)
+  if (res.error) {
+    let details = res.error.message;
+    try {
+      const serverResp: any = (res.error as any).context?.response;
+      if (serverResp) {
+        const txt = await serverResp.text();      // cuerpo: normalmente { "error": "..." }
+        details = txt || details;
+      }
+    } catch { /* ignore */ }
+    throw new Error(details);
+  }
+
+  // 4) Éxito: guardar temas
+  const data = res.data as { temas: string[] };
+  await saveTopicsToDatabase(data.temas, file.name);
+  setInitialTopics(data.temas);
+  setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
+
+} catch (error: unknown) {
+  const msg = getErrorMessage(error);
+  console.error('Error en el proceso:', error);
+  setStatusMessage(`Error: ${msg}`);
+} finally {
+  setIsLoading(false);
+}
+
   };
 
   const generateQuestionsProcess = async () => {
