@@ -4,10 +4,10 @@
 
 import dynamic from 'next/dynamic';
 
-// Cargamos nuestro nuevo componente de forma dinámica, deshabilitando SSR
+// Cargamos nuestro componente de forma dinámica, deshabilitando SSR
 const PDFUploader = dynamic(() => import('./PDFUploader'), {
   ssr: false,
-  loading: () => <p>Cargando herramienta...</p> // Un mensaje de carga opcional
+  loading: () => <p className="text-center p-8">Cargando herramienta de análisis...</p>
 });
 
 export default function AnalizadorPage() {

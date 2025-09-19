@@ -32,7 +32,7 @@ export default function PDFUploader() {
       setGeneratedQuestions([]);
     }
   };
-  
+
   const startAnalysisProcess = async () => {
     if (!file) {
       alert("Por favor, selecciona un archivo PDF primero.");
@@ -43,24 +43,19 @@ export default function PDFUploader() {
     setStatusMessage('Paso 1/3: Subiendo archivo a Supabase Storage...');
 
     try {
-      // --- LÓGICA NUEVA: SUBIR A STORAGE ---
       const filePath = `public/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from('documentos-pdf') // El nombre de tu bucket
+        .from('documentos-pdf')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       setStatusMessage('Paso 2/3: Archivo subido. Enviando a la IA para análisis...');
 
-      // Obtenemos la URL pública del archivo
       const { data: { publicUrl } } = supabase.storage
         .from('documentos-pdf')
         .getPublicUrl(filePath);
 
-      // --- FIN LÓGICA NUEVA ---
-
-      // Invocamos la función con la URL
       const { data, error: invokeError } = await supabase.functions.invoke('pdf-analyzer', {
         body: { fileUrl: publicUrl, mode: 'analyze' },
       });
@@ -84,12 +79,6 @@ export default function PDFUploader() {
     setIsLoading(true);
     setStatusMessage('Enviando temas a la IA para generar preguntas...');
 
-    // (La lógica para generar preguntas no necesita el archivo, solo los temas,
-    // pero la función backend espera el archivo, así que lo mantenemos simple por ahora
-    // y seguimos el mismo flujo)
-    // En una futura optimización, podríamos crear un endpoint que solo reciba temas.
-
-    // Re-usamos el flujo de subida para mantener la consistencia
      const filePath = `public/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, file);
       if (uploadError) throw uploadError;
@@ -112,12 +101,54 @@ export default function PDFUploader() {
   };
 
 
-  const saveQuestionsToSupabase = async () => { /* ... esta función no cambia ... */ };
+  const saveQuestionsToSupabase = async () => {
+    if (generatedQuestions.length === 0) return;
+    setIsLoading(true);
+    setStatusMessage('Guardando preguntas en Supabase...');
+    
+    const questionsToInsert: MasterQuestionInsert[] = generatedQuestions.map(q => ({
+        id: crypto.randomUUID(),
+        category: 'PDF Generado',
+        subcategory: file?.name.slice(0, 50) || 'desconocido',
+        question_data: {
+            prompt: q.pregunta,
+            options: q.opciones.map((opt: string, index: number) => ({ id: index + 1, text: opt })),
+            answer_key: { correct_option_id: q.opciones.findIndex((opt: string) => opt === q.respuesta_correcta) + 1 }
+        }
+    }));
+
+    const { error } = await supabase.from('master_questions').insert(questionsToInsert);
+
+    if (error) {
+        setStatusMessage("Error al guardar las preguntas: " + error.message);
+    } else {
+        setStatusMessage("¡Éxito! Las preguntas fueron guardadas en la tabla 'master_questions'.");
+    }
+    setIsLoading(false);
+  };
 
   return (
     <div className="space-y-6">
-       {/* El JSX para el botón de analizar temas ahora llama a startAnalysisProcess */}
-       {file && initialTopics.length === 0 && !isLoading && (
+      <h1 className="text-3xl font-bold">Analizador de PDF con IA (con OCR)</h1>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Paso 1: Sube cualquier documento PDF</label>
+        <input 
+          type="file" 
+          accept=".pdf" 
+          onChange={handleFileChange} 
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+
+      {(isLoading || statusMessage) && 
+          <div className="bg-gray-100 p-4 rounded-lg text-center">
+            <p className="text-sm text-gray-600">{statusMessage}</p>
+            {isLoading && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mx-auto mt-2"></div>}
+          </div>
+      }
+      
+      {file && initialTopics.length === 0 && !isLoading && (
         <button 
           onClick={startAnalysisProcess}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -125,8 +156,7 @@ export default function PDFUploader() {
           Analizar Temas del PDF
         </button>
       )}
-
-      {/* El JSX para generar preguntas ahora llama a generateQuestionsProcess */}
+      
       {initialTopics.length > 0 && generatedQuestions.length === 0 && !isLoading && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Temas Detectados</h2>
@@ -144,7 +174,6 @@ export default function PDFUploader() {
         </div>
       )}
       
-      {/* --- PASO 4: MOSTRAR Y GUARDAR PREGUNTAS --- */}
       {generatedQuestions.length > 0 && !isLoading && (
          <div className="space-y-4">
           <h2 className="text-xl font-semibold">Preguntas Generadas</h2>
