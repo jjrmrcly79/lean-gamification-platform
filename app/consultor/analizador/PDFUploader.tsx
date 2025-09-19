@@ -128,14 +128,36 @@ export default function PDFUploader() {
   if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
 
   // 3) Invocar Edge Function
-  const res = await supabase.functions.invoke('pdf-analyzer', {
-    body: { fileUrl: publicUrl, mode: 'analyze' },
-  });
+  const { data: sfn } = await supabase.auth.getSession();
+if (!sfn.session) throw new Error('Sin sesión para invocar función.');
 
-  if (res.error) {
-    const details = await getInvokeErrorDetails(res.error);
-    throw new Error(details);
+const resp = await fetch(
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pdf-analyzer`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // muy importante: manda el JWT del usuario para verify_jwt
+      'Authorization': `Bearer ${sfn.session.access_token}`,
+    },
+    body: JSON.stringify({ fileUrl: publicUrl, mode: 'analyze' }),
   }
+);
+
+// Lee el body SIEMPRE, aunque sea 4xx/5xx
+const bodyText = await resp.text();
+
+if (!resp.ok) {
+  // el servidor suele devolver {"error":"..."}; intenta parsear y mostrar
+  try {
+    const j = JSON.parse(bodyText);
+    throw new Error(j.error ?? bodyText);
+  } catch {
+    throw new Error(bodyText || 'Edge Function error');
+  }
+}
+
+const data = JSON.parse(bodyText) as { temas: string[] };
 
 
   // 4) Éxito: guardar temas
