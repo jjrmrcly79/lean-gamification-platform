@@ -6,7 +6,9 @@ import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import type { Database } from '@/types/supabase';
 
+// Definimos los tipos de Insert para ambas tablas
 type MasterQuestionInsert = Database['public']['Tables']['master_questions']['Insert'];
+type TemaGeneradoInsert = Database['public']['Tables']['temas_generados']['Insert'];
 
 interface GeneratedQuestion {
   pregunta: string;
@@ -33,18 +35,19 @@ export default function PDFUploader() {
     }
   };
 
-  // --- NUEVA FUNCIÓN PARA GUARDAR LOS TEMAS ---
   const saveTopicsToDatabase = async (topics: string[], documentName: string) => {
     if (topics.length === 0) return;
     
-    const { error } = await supabase.from('temas_generados').insert({
+    // Creamos el objeto a insertar usando el tipo que definimos
+    const newTopicEntry: TemaGeneradoInsert = {
       temas: topics,
       documento_origen: documentName
-    });
+    };
+
+    const { error } = await supabase.from('temas_generados').insert(newTopicEntry);
 
     if (error) {
-      // Si falla, mostramos un error pero no detenemos el flujo.
-      setStatusMessage(`Error al guardar temas: ${error.message}. Puedes continuar generando preguntas.`);
+      setStatusMessage(`Error al guardar temas: ${error.message}. Puedes continuar.`);
       console.error("Error saving topics:", error);
     }
   };
@@ -78,7 +81,6 @@ export default function PDFUploader() {
       
       if (invokeError) throw invokeError;
 
-      // --- CAMBIO: Guardamos los temas y luego actualizamos el estado ---
       await saveTopicsToDatabase(data.temas, file.name);
       setInitialTopics(data.temas);
       setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
@@ -97,9 +99,9 @@ export default function PDFUploader() {
     setIsLoading(true);
     setStatusMessage('Enviando temas a la IA para generar preguntas...');
     
-    const { data: { publicUrl } } = supabase.storage
+     const { data: { publicUrl } } = supabase.storage
         .from('documentos-pdf')
-        .getPublicUrl(file.name); // Asumimos que el archivo ya está subido
+        .getPublicUrl(`public/${file.name}`); // Path simplificado, puede requerir ajuste
 
       const { data, error: invokeError } = await supabase.functions.invoke('pdf-analyzer', {
         body: { 
