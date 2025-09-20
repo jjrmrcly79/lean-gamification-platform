@@ -52,7 +52,7 @@ export default function PDFUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  
 
   const [initialTopics, setInitialTopics] = useState<string[]>([]);
   const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([]);
@@ -64,7 +64,7 @@ export default function PDFUploader() {
       setStatusMessage('Archivo seleccionado. Listo para analizar.');
       setInitialTopics([]);
       setGeneratedQuestions([]);
-      setUploadedPath(null);
+      
     }
   };
 
@@ -115,7 +115,7 @@ export default function PDFUploader() {
       const totalPages = originalPdf.getPageCount();
       const chunkSize = 30; // Límite de páginas de la API de Document AI
       
-      let allTopics: string[] = [];
+      const allTopics: string[] = [];
       
       // Itera sobre el PDF en trozos de 30 páginas
       for (let i = 0; i < totalPages; i += chunkSize) {
@@ -131,7 +131,7 @@ export default function PDFUploader() {
 
         // 2. Sube el trozo a Supabase Storage
         const filePath = `public/${Date.now()}-${chunkFile.name}`;
-        if (i === 0) setUploadedPath(filePath); // Guarda la ruta del primer trozo para usarla después
+        
 
         const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkFile);
         if (uploadError) throw uploadError;
@@ -195,7 +195,7 @@ export default function PDFUploader() {
       const totalPages = originalPdf.getPageCount();
       const chunkSize = 30;
 
-      let allQuestions: GeneratedQuestion[] = [];
+      const allQuestions: GeneratedQuestion[] = [];
       
       // Itera de nuevo sobre el PDF para dar contexto a la IA
       for (let i = 0; i < totalPages; i += chunkSize) {
