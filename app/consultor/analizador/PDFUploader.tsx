@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import type { Database } from '@/types/supabase';
+import { PDFDocument } from 'pdf-lib';
 
 type MasterQuestionInsert = Database['public']['Tables']['master_questions']['Insert'];
 type TemaGeneradoInsert   = Database['public']['Tables']['temas_generados']['Insert'];
@@ -101,79 +102,79 @@ export default function PDFUploader() {
 
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) {
-      setStatusMessage('Debes iniciar sesión para analizar y subir el PDF.');
+      setStatusMessage('Debes iniciar sesión para analizar.');
       return;
     }
 
     setIsLoading(true);
-    setStatusMessage('Paso 1/3: Subiendo archivo a Supabase Storage...');
+    setStatusMessage('Iniciando proceso de análisis...');
 
     try {
-  const filePath = `public/${Date.now()}-${file.name}`;
-  setUploadedPath(filePath);
+      const fileBuffer = await file.arrayBuffer();
+      const originalPdf = await PDFDocument.load(fileBuffer);
+      const totalPages = originalPdf.getPageCount();
+      const chunkSize = 30; // Límite de páginas de la API de Document AI
+      
+      let allTopics: string[] = [];
+      
+      // Itera sobre el PDF en trozos de 30 páginas
+      for (let i = 0; i < totalPages; i += chunkSize) {
+        const end = Math.min(i + chunkSize, totalPages);
+        setStatusMessage(`Paso 1/${totalPages}: Procesando páginas ${i + 1} a ${end}...`);
 
-  // 1) Subir a Storage
-  const { error: uploadError } = await supabase.storage
-    .from('documentos-pdf')
-    .upload(filePath, file);
-  if (uploadError) throw uploadError;
+        // 1. Crea un PDF temporal con el trozo actual
+        const chunkPdf = await PDFDocument.create();
+        const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
+        copiedPages.forEach(page => chunkPdf.addPage(page));
+        const chunkBytes = await chunkPdf.save();
+        const chunkFile = new File([chunkBytes], `${i}-${file.name}`, { type: 'application/pdf' });
 
-  setStatusMessage('Paso 2/3: Archivo subido. Enviando a la IA para análisis...');
+        // 2. Sube el trozo a Supabase Storage
+        const filePath = `public/${Date.now()}-${chunkFile.name}`;
+        if (i === 0) setUploadedPath(filePath); // Guarda la ruta del primer trozo para usarla después
 
-  // 2) Obtener URL pública (si tu bucket es privado, cambia a createSignedUrl)
-  const { data: pub } = supabase.storage
-    .from('documentos-pdf')
-    .getPublicUrl(filePath);
-  const publicUrl = pub.publicUrl;
-  if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
+        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkFile);
+        if (uploadError) throw uploadError;
 
-  // 3) Invocar Edge Function
-  const { data: sfn } = await supabase.auth.getSession();
-if (!sfn.session) throw new Error('Sin sesión para invocar función.');
+        // 3. Obtiene la URL y llama a la Edge Function
+        const { data: pub } = supabase.storage.from('documentos-pdf').getPublicUrl(filePath);
+        if (!pub.publicUrl) throw new Error(`No se pudo obtener la URL para el trozo en la página ${i + 1}.`);
 
-const resp = await fetch(
-  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pdf-analyzer`,
-  {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // muy importante: manda el JWT del usuario para verify_jwt
-      'Authorization': `Bearer ${sfn.session.access_token}`,
-    },
-    body: JSON.stringify({ fileUrl: publicUrl, mode: 'analyze' }),
-  }
-);
+        const resp = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pdf-analyzer`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${s.session.access_token}`,
+            },
+            body: JSON.stringify({ fileUrl: pub.publicUrl, mode: 'analyze' }),
+          }
+        );
 
-// Lee el body SIEMPRE, aunque sea 4xx/5xx
-const bodyText = await resp.text();
+        const bodyText = await resp.text();
+        if (!resp.ok) {
+            try { const j = JSON.parse(bodyText); throw new Error(j.error ?? bodyText); }
+            catch { throw new Error(bodyText || `Error en el trozo de la página ${i+1}`); }
+        }
 
-if (!resp.ok) {
-  // el servidor suele devolver {"error":"..."}; intenta parsear y mostrar
-  try {
-    const j = JSON.parse(bodyText);
-    throw new Error(j.error ?? bodyText);
-  } catch {
-    throw new Error(bodyText || 'Edge Function error');
-  }
-}
+        const analyzeRes = JSON.parse(bodyText) as { temas: string[] };
+        allTopics.push(...analyzeRes.temas);
+      }
 
+      // 4. Une, limpia y guarda todos los temas
+      const uniqueTopics = [...new Set(allTopics)]; // Elimina duplicados
+      await saveTopicsToDatabase(uniqueTopics, file.name);
+      setInitialTopics(uniqueTopics);
+      setStatusMessage('Análisis completado. Temas detectados y guardados.');
 
- // 4) Éxito: guardar temas
-const analyzeRes = JSON.parse(bodyText) as { temas: string[] };
-await saveTopicsToDatabase(analyzeRes.temas, file.name);
-setInitialTopics(analyzeRes.temas);
-setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar preguntas.');
-
-
-
-} catch (error: unknown) {
-  const msg = getErrorMessage(error);
-  console.error('Error en el proceso:', error);
-  setStatusMessage(`Error: ${msg}`);
-} finally {
-  setIsLoading(false);
-}
-
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      console.error('Error en el proceso de análisis:', error);
+      setStatusMessage(`Error: ${msg}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const generateQuestionsProcess = async () => {
@@ -185,39 +186,58 @@ setStatusMessage('Paso 3/3: Temas detectados y guardados. Ahora puedes generar p
       return;
     }
 
-    if (!uploadedPath) {
-      setStatusMessage('No encuentro el archivo subido. Vuelve a analizar el PDF antes de generar preguntas.');
-      return;
-    }
-
     setIsLoading(true);
-    setStatusMessage('Enviando temas a la IA para generar preguntas...');
+    setStatusMessage('Generando preguntas desde el documento...');
 
     try {
-      const { data: pub } = supabase.storage
-        .from('documentos-pdf')
-        .getPublicUrl(uploadedPath);
-      const publicUrl = pub.publicUrl;
-      if (!publicUrl) throw new Error('No se pudo obtener la URL pública del PDF.');
+      const fileBuffer = await file.arrayBuffer();
+      const originalPdf = await PDFDocument.load(fileBuffer);
+      const totalPages = originalPdf.getPageCount();
+      const chunkSize = 30;
 
-      const res2 = await supabase.functions.invoke('pdf-analyzer', {
-  body: {
-    fileUrl: publicUrl,
-    mode: 'generate_questions',
-    // Si tu function acepta array directamente:
-    // validated_topics: initialTopics,
-    validated_topics: JSON.stringify(initialTopics),
-  },
-});
+      let allQuestions: GeneratedQuestion[] = [];
+      
+      // Itera de nuevo sobre el PDF para dar contexto a la IA
+      for (let i = 0; i < totalPages; i += chunkSize) {
+        const end = Math.min(i + chunkSize, totalPages);
+        setStatusMessage(`Paso 2/${totalPages}: Generando preguntas del contexto de las páginas ${i + 1} a ${end}...`);
+        
+        // Crea y sube el trozo de nuevo (o podrías guardarlos si prefieres)
+        const chunkPdf = await PDFDocument.create();
+        const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
+        copiedPages.forEach(page => chunkPdf.addPage(page));
+        const chunkBytes = await chunkPdf.save();
+        const chunkFile = new File([chunkBytes], `questions-${i}-${file.name}`, { type: 'application/pdf' });
 
-if (res2.error) {
-  const details = await getInvokeErrorDetails(res2.error);
-  throw new Error(details);
-}
+        const filePath = `public/${Date.now()}-${chunkFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkFile);
+        if (uploadError) throw uploadError;
 
-const data2 = res2.data as { preguntas: GeneratedQuestion[] };
-setGeneratedQuestions(data2.preguntas ?? []);
-setStatusMessage('Preguntas generadas. Listas para guardar en Supabase.');
+        const { data: pub } = supabase.storage.from('documentos-pdf').getPublicUrl(filePath);
+        if (!pub.publicUrl) throw new Error(`No se pudo obtener URL para generar preguntas en página ${i+1}.`);
+        
+        // Llama a la Edge Function para el trozo, pero con todos los temas validados
+        const res2 = await supabase.functions.invoke('pdf-analyzer', {
+          body: {
+            fileUrl: pub.publicUrl,
+            mode: 'generate_questions',
+            validated_topics: JSON.stringify(initialTopics), // Envía la lista completa de temas
+          },
+        });
+        
+        if (res2.error) {
+            const details = await getInvokeErrorDetails(res2.error);
+            throw new Error(details);
+        }
+
+        const data2 = res2.data as { preguntas: GeneratedQuestion[] };
+        if (data2.preguntas) {
+            allQuestions.push(...data2.preguntas);
+        }
+      }
+
+      setGeneratedQuestions(allQuestions);
+      setStatusMessage('Preguntas generadas. Listas para guardar.');
 
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
