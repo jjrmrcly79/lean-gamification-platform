@@ -205,7 +205,7 @@ export default function PDFUploader() {
         const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
         copiedPages.forEach(page => chunkPdf.addPage(page));
         const chunkBytes = await chunkPdf.save();
-        const chunkBlob = new Blob([chunkBytes], { type: 'application/pdf' });
+        const chunkBlob = new Blob([new Uint8Array(chunkBytes)], { type: 'application/pdf' });
         const filePath = `public/${Date.now()}-questions-${i}-${file.name}`;
         const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkBlob);
 
