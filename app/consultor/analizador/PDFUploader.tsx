@@ -127,13 +127,11 @@ export default function PDFUploader() {
         const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
         copiedPages.forEach(page => chunkPdf.addPage(page));
         const chunkBytes = await chunkPdf.save();
-        const chunkFile = new File([chunkBytes], `${i}-${file.name}`, { type: 'application/pdf' });
-
-        // 2. Sube el trozo a Supabase Storage
-        const filePath = `public/${Date.now()}-${chunkFile.name}`;
-        
-
-        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkFile);
+        // DESPUÉS
+        const chunkBlob = new Blob([chunkBytes], { type: 'application/pdf' });
+        const filePath = `public/${Date.now()}-${i}-${file.name}`;
+        //...
+        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkBlob);
         if (uploadError) throw uploadError;
 
         // 3. Obtiene la URL y llama a la Edge Function
@@ -207,10 +205,10 @@ export default function PDFUploader() {
         const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
         copiedPages.forEach(page => chunkPdf.addPage(page));
         const chunkBytes = await chunkPdf.save();
-        const chunkFile = new File([chunkBytes], `questions-${i}-${file.name}`, { type: 'application/pdf' });
+        const chunkBlob = new Blob([chunkBytes], { type: 'application/pdf' });
+        const filePath = `public/${Date.now()}-questions-${i}-${file.name}`;
+        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkBlob);
 
-        const filePath = `public/${Date.now()}-${chunkFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkFile);
         if (uploadError) throw uploadError;
 
         const { data: pub } = supabase.storage.from('documentos-pdf').getPublicUrl(filePath);
