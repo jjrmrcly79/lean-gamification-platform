@@ -1,20 +1,3 @@
-[?25l[?2004h
-                                                                                                       
-  >  1. dicshuqncgxkpvitksco [name: jjrmrcly79's Project, org: jlrvqhjdgfxjdgyfrzva, region: us-east-1]
-    2. tilxwopmazrtwqzosaqm [name: tiendas_ecomerce, org: jlrvqhjdgfxjdgyfrzva, region: us-east-2]     
-                                                                                                       
-                                                                                                       
-                                                                                                       
-                                                                                                       
-    ↑/k up • ↓/j down • / filter • q quit • ? more                                                     
-                                                                                                       [D[9A [J[D[2K[?2004l[?25h[?1002l[?1003l[?1006lexport type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -33,9 +16,9 @@ export type Database = {
           involucramiento_score: number | null
           kaizen_score: number | null
           perfil_score: number | null
-          questions_data: Json | null
-          score_by_category: Json | null
-          score_by_subcategory: Json | null
+          questions_data: JSON | null
+          score_by_category: JSON | null
+          score_by_subcategory: JSON | null
           sostenimiento_score: number | null
           status: string
           user_id: string | null
@@ -49,9 +32,9 @@ export type Database = {
           involucramiento_score?: number | null
           kaizen_score?: number | null
           perfil_score?: number | null
-          questions_data?: Json | null
-          score_by_category?: Json | null
-          score_by_subcategory?: Json | null
+          questions_data?: JSON | null
+          score_by_category?: JSON | null
+          score_by_subcategory?: JSON | null
           sostenimiento_score?: number | null
           status?: string
           user_id?: string | null
@@ -65,9 +48,9 @@ export type Database = {
           involucramiento_score?: number | null
           kaizen_score?: number | null
           perfil_score?: number | null
-          questions_data?: Json | null
-          score_by_category?: Json | null
-          score_by_subcategory?: Json | null
+          questions_data?: JSON | null
+          score_by_category?: JSON | null
+          score_by_subcategory?: JSON | null
           sostenimiento_score?: number | null
           status?: string
           user_id?: string | null
@@ -87,7 +70,7 @@ export type Database = {
           created_at: string
           id: number
           operation_name: string
-          result_topics: Json | null
+          result_topics: JSON | null
           source_document_name: string | null
           status: string
           user_id: string | null
@@ -96,7 +79,7 @@ export type Database = {
           created_at?: string
           id?: number
           operation_name: string
-          result_topics?: Json | null
+          result_topics?: JSON | null
           source_document_name?: string | null
           status?: string
           user_id?: string | null
@@ -105,7 +88,7 @@ export type Database = {
           created_at?: string
           id?: number
           operation_name?: string
-          result_topics?: Json | null
+          result_topics?: JSON | null
           source_document_name?: string | null
           status?: string
           user_id?: string | null
@@ -116,21 +99,21 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
-          example: Json | null
+          example: JSON | null
           id: string
           name: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
-          example?: Json | null
+          example?: JSON | null
           id: string
           name?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
-          example?: Json | null
+          example?: JSON | null
           id?: string
           name?: string | null
         }
@@ -142,7 +125,7 @@ export type Database = {
           created_at: string | null
           id: string
           prompt: string | null
-          question_data: Json | null
+          question_data: JSON | null
           subcategory: string | null
           type: string | null
         }
@@ -151,7 +134,7 @@ export type Database = {
           created_at?: string | null
           id: string
           prompt?: string | null
-          question_data?: Json | null
+          question_data?: JSON | null
           subcategory?: string | null
           type?: string | null
         }
@@ -160,7 +143,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           prompt?: string | null
-          question_data?: Json | null
+          question_data?: JSON | null
           subcategory?: string | null
           type?: string | null
         }
@@ -192,21 +175,21 @@ export type Database = {
           created_at: string
           documento_origen: string | null
           id: string
-          temas: Json | null
+          temas: JSON | null
           user_id: string
         }
         Insert: {
           created_at?: string
           documento_origen?: string | null
           id?: string
-          temas?: Json | null
+          temas?: JSON | null
           user_id?: string
         }
         Update: {
           created_at?: string
           documento_origen?: string | null
           id?: string
-          temas?: Json | null
+          temas?: JSON | null
           user_id?: string
         }
         Relationships: [
