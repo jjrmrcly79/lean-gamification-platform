@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-// --- CORRECCIÓN CLAVE: Usar los alias de ruta configurados en tsconfig.json ---
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
-import { type Database } from '@/lib/database.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import type { Database } from '@/types/supabase';
+
 
 // Tipos locales para la data que esperamos dentro del JSON de la BD.
 type ScoreByCategory = Record<string, { score: number }>;
@@ -75,7 +75,7 @@ export default function EvaluationPage() {
   const handleSubmitEvaluation = async () => {
     if (!attempt) return;
     
-    const categoryScoresData = attempt.score_by_category as ScoreByCategory | null;
+    const categoryScoresData = attempt.score_by_category as unknown as ScoreByCategory | null;
     const categoryScores = categoryScoresData ? Object.values(categoryScoresData).map(c => c.score) : [];
     const examenAvg = categoryScores.length > 0 ? categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length : 0;
     
@@ -103,8 +103,8 @@ export default function EvaluationPage() {
     }
   };
   
-  const categoryRadarData = attempt && attempt.score_by_category ? Object.entries(attempt.score_by_category as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
-  const subcategoryRadarData = attempt && attempt.score_by_subcategory ? Object.entries(attempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const categoryRadarData = attempt && attempt.score_by_category ? Object.entries(attempt.score_by_category as unknown as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
+  const subcategoryRadarData = attempt && attempt.score_by_subcategory ? Object.entries(attempt.score_by_subcategory as unknown as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
 
   if (isLoading) return <div className="p-8">Cargando evaluación...</div>;
   if (error) return <div className="p-8 text-red-500">{error}</div>;
