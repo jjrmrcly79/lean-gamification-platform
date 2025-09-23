@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import type { Database } from '@/types/supabase';
-import { PDFDocument } from 'pdf-lib';
+
 
 type MasterQuestionInsert = Database['public']['Tables']['master_questions']['Insert'];
 type TemaGeneradoInsert   = Database['public']['Tables']['temas_generados']['Insert'];
@@ -93,87 +93,60 @@ export default function PDFUploader() {
   }
 };
 
+// Esta es la nueva función que reemplaza a la anterior
+const handleUploadAndStartBatch = async () => {
+  if (!file) {
+    alert('Por favor, selecciona un archivo PDF primero.');
+    return;
+  }
 
-  const startAnalysisProcess = async () => {
-    if (!file) {
-      alert('Por favor, selecciona un archivo PDF primero.');
-      return;
+  const { data: s } = await supabase.auth.getSession();
+  if (!s.session) {
+    setStatusMessage('Debes iniciar sesión para analizar.');
+    return;
+  }
+
+  setIsLoading(true);
+  setStatusMessage('Paso 1: Subiendo el documento completo...');
+
+  try {
+    // 1. Subir el archivo COMPLETO a Supabase Storage
+    const filePath = `batch-uploads/${s.session.user.id}/${Date.now()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('documentos-pdf') // O el bucket que prefieras
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw new Error(`Error al subir el archivo: ${uploadError.message}`);
     }
 
-    const { data: s } = await supabase.auth.getSession();
-    if (!s.session) {
-      setStatusMessage('Debes iniciar sesión para analizar.');
-      return;
+    setStatusMessage('Paso 2: Iniciando el procesamiento en segundo plano...');
+
+    // 2. Llamar a la nueva Edge Function para que inicie el trabajo
+    const { error: invokeError } = await supabase.functions.invoke('batch-pdf-processor', {
+      body: {
+        supabasePath: filePath, // Solo enviamos la ruta, no el contenido
+      },
+    });
+
+    if (invokeError) {
+      const details = await getInvokeErrorDetails(invokeError); // Asumo que tienes esta función de ayuda
+      throw new Error(`Error al invocar la función: ${details}`);
     }
+    
+    // La función responde que el trabajo ha comenzado.
+    // Aquí termina la interacción del usuario.
+    setStatusMessage(`✅ ¡Éxito! El análisis ha comenzado. Este proceso puede tardar varios minutos y se ejecuta en segundo plano. Te notificaremos cuando esté listo.`);
 
-    setIsLoading(true);
-    setStatusMessage('Iniciando proceso de análisis...');
-
-    try {
-      const fileBuffer = await file.arrayBuffer();
-      const originalPdf = await PDFDocument.load(fileBuffer);
-      const totalPages = originalPdf.getPageCount();
-      const chunkSize = 30; // Límite de páginas de la API de Document AI
-      
-      const allTopics: string[] = [];
-      
-      // Itera sobre el PDF en trozos de 30 páginas
-      for (let i = 0; i < totalPages; i += chunkSize) {
-        const end = Math.min(i + chunkSize, totalPages);
-        setStatusMessage(`Paso 1/${totalPages}: Procesando páginas ${i + 1} a ${end}...`);
-
-        // 1. Crea un PDF temporal con el trozo actual
-        const chunkPdf = await PDFDocument.create();
-        const copiedPages = await chunkPdf.copyPages(originalPdf, Array.from({ length: end - i }, (_, k) => i + k));
-        copiedPages.forEach(page => chunkPdf.addPage(page));
-        const chunkBytes = await chunkPdf.save();
-        // DESPUÉS
-        const chunkBlob = new Blob([new Uint8Array(chunkBytes)], { type: 'application/pdf' });
-        const filePath = `public/${Date.now()}-${i}-${file.name}`;
-        //...
-        const { error: uploadError } = await supabase.storage.from('documentos-pdf').upload(filePath, chunkBlob);
-        if (uploadError) throw uploadError;
-
-        // 3. Obtiene la URL y llama a la Edge Function
-        const { data: pub } = supabase.storage.from('documentos-pdf').getPublicUrl(filePath);
-        if (!pub.publicUrl) throw new Error(`No se pudo obtener la URL para el trozo en la página ${i + 1}.`);
-
-        const resp = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pdf-analyzer`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${s.session.access_token}`,
-            },
-            body: JSON.stringify({ fileUrl: pub.publicUrl, mode: 'analyze' }),
-          }
-        );
-
-        const bodyText = await resp.text();
-        if (!resp.ok) {
-            try { const j = JSON.parse(bodyText); throw new Error(j.error ?? bodyText); }
-            catch { throw new Error(bodyText || `Error en el trozo de la página ${i+1}`); }
-        }
-
-        const analyzeRes = JSON.parse(bodyText) as { temas: string[] };
-        allTopics.push(...analyzeRes.temas);
-      }
-
-      // 4. Une, limpia y guarda todos los temas
-      const uniqueTopics = [...new Set(allTopics)]; // Elimina duplicados
-      await saveTopicsToDatabase(uniqueTopics, file.name);
-      setInitialTopics(uniqueTopics);
-      setStatusMessage('Análisis completado. Temas detectados y guardados.');
-
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      console.error('Error en el proceso de análisis:', error);
-      setStatusMessage(`Error: ${msg}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error); // Asumo que tienes esta función de ayuda
+    console.error('Error en el proceso de inicio:', error);
+    setStatusMessage(`Error: ${msg}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
+  
 
   const generateQuestionsProcess = async () => {
     if (!file || initialTopics.length === 0) return;
@@ -306,11 +279,10 @@ export default function PDFUploader() {
       )}
 
       {file && initialTopics.length === 0 && !isLoading && (
-        <button
-          onClick={startAnalysisProcess}
+        <button onClick={handleUploadAndStartBatch}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          Analizar y Guardar Temas del PDF
+          Analizar Documento (Proceso en Lote)
         </button>
       )}
 
