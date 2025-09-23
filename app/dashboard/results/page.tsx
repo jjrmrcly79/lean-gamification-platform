@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
-import { type Database } from '@/lib/database.types';
+import type { Database } from '@/types/supabase'; // Make sure the path is correct
 
 type ScoreByCategory = Record<string, { score: number }>;
 type ScoreBySubcategory = Record<string, { score: number }>;
@@ -16,7 +16,7 @@ type Attempt = Database['public']['Tables']['attempts']['Row'];
 
 export default function ResultsPage() {
   const supabase = getSupabaseBrowserClient();
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]); 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,13 +63,13 @@ export default function ResultsPage() {
 
   const latestAttempt = attempts?.[0];
 
-  const categoryRadarData = latestAttempt && latestAttempt.score_by_category ? Object.entries(latestAttempt.score_by_category as ScoreByCategory).map(([name, data]) => ({
+  const categoryRadarData = latestAttempt && latestAttempt.score_by_category ? Object.entries(latestAttempt.score_by_category as unknown as ScoreByCategory).map(([name, data]) => ({
     subject: name,
     score: data.score,
     fullMark: 100
   })) : [];
 
-  const subcategoryRadarData = latestAttempt && latestAttempt.score_by_subcategory ? Object.entries(latestAttempt.score_by_subcategory as ScoreBySubcategory).map(([name, data]) => ({
+  const subcategoryRadarData = latestAttempt && latestAttempt.score_by_subcategory ? Object.entries(latestAttempt.score_by_subcategory as unknown as ScoreBySubcategory).map(([name, data]) => ({
     subject: name,
     score: data.score,
     fullMark: 100
