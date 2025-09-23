@@ -42,7 +42,7 @@ export default function PDFUploader() {
   const [statusMessage, setStatusMessage] = useState('');
 
   // Usamos useRef para el intervalo para evitar problemas con los re-renders
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -139,9 +139,11 @@ export default function PDFUploader() {
           if (statusData?.status === 'COMPLETADO') {
             setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
             stopPolling();
+            setIsLoading(false);
           } else if (statusData?.status === 'FALLIDO') {
             setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
             stopPolling();
+            setIsLoading(false);
           } else {
              setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
           }
@@ -149,6 +151,7 @@ export default function PDFUploader() {
         } catch (pollError) {
           setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
           stopPolling();
+          setIsLoading(false);
         }
       }, 20000); // Preguntar cada 20 segundos
 
