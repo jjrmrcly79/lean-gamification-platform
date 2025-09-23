@@ -1,3 +1,6 @@
+Need to install the following packages:
+supabase@2.45.5
+Ok to proceed? (y) 
 export type Json =
   | string
   | number
@@ -17,12 +20,14 @@ export type Database = {
       attempts: {
         Row: {
           created_at: string | null
+          duration_seconds: number | null
           final_score: number | null
           herramientas_score: number | null
           id: string
           involucramiento_score: number | null
           kaizen_score: number | null
           perfil_score: number | null
+          questions_data: Json | null
           score_by_category: Json | null
           score_by_subcategory: Json | null
           sostenimiento_score: number | null
@@ -31,12 +36,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          duration_seconds?: number | null
           final_score?: number | null
           herramientas_score?: number | null
           id?: string
           involucramiento_score?: number | null
           kaizen_score?: number | null
           perfil_score?: number | null
+          questions_data?: Json | null
           score_by_category?: Json | null
           score_by_subcategory?: Json | null
           sostenimiento_score?: number | null
@@ -45,12 +52,14 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          duration_seconds?: number | null
           final_score?: number | null
           herramientas_score?: number | null
           id?: string
           involucramiento_score?: number | null
           kaizen_score?: number | null
           perfil_score?: number | null
+          questions_data?: Json | null
           score_by_category?: Json | null
           score_by_subcategory?: Json | null
           sostenimiento_score?: number | null
@@ -66,6 +75,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      doc_ai_jobs: {
+        Row: {
+          created_at: string
+          id: number
+          operation_name: string
+          result_topics: Json | null
+          source_document_name: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          operation_name: string
+          result_topics?: Json | null
+          source_document_name?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          operation_name?: string
+          result_topics?: Json | null
+          source_document_name?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       jiribilla_catalog: {
         Row: {
@@ -139,6 +178,56 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string | null
+        }
+        Relationships: []
+      }
+      temas_generados: {
+        Row: {
+          created_at: string
+          documento_origen: string | null
+          id: string
+          temas: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          documento_origen?: string | null
+          id?: string
+          temas?: Json | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          documento_origen?: string | null
+          id?: string
+          temas?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temas_generados_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
