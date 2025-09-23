@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import type { Database } from '@/types/supabase';
+import type { Database } from '@/lib/database.types';
 
 
 // Tipos locales para la data que esperamos dentro del JSON de la BD.

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
-import type { Database } from '@/types/supabase'; // Make sure the path is correct
+import type { Database } from '@/lib/database.types'// Make sure the path is correct
 
 type ScoreByCategory = Record<string, { score: number }>;
 type ScoreBySubcategory = Record<string, { score: number }>;
