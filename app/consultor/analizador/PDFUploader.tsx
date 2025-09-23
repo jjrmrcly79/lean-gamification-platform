@@ -1,11 +1,11 @@
 // leancert-frontend/app/consultor/analizador/PDFUploader.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 
 // --- Funciones de Ayuda (Helpers) ---
-
+// (Estas funciones se mantienen igual)
 function getErrorMessage(e: unknown): string {
   if (typeof e === 'object' && e !== null && 'message' in e) {
     const m = (e as { message?: unknown }).message;
@@ -33,7 +33,6 @@ async function getInvokeErrorDetails(err: unknown): Promise<string> {
   try { return JSON.stringify(err); } catch { return String(err); }
 }
 
-
 // --- Componente Principal ---
 
 export default function PDFUploader() {
@@ -42,6 +41,9 @@ export default function PDFUploader() {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
+  // Usamos useRef para el intervalo para evitar problemas con los re-renders
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
@@ -49,6 +51,21 @@ export default function PDFUploader() {
       setStatusMessage('Archivo seleccionado. Listo para analizar.');
     }
   };
+  
+  // NUEVA FUNCIÓN: Se encarga de detener el polling
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
+  // NUEVA LÓGICA: useEffect para limpiar el intervalo si el componente se desmonta
+  useEffect(() => {
+    return () => {
+      stopPolling(); // Limpia el intervalo al salir
+    };
+  }, []);
 
   const handleUploadAndStartBatch = async () => {
     if (!file) {
@@ -70,13 +87,12 @@ export default function PDFUploader() {
         .from('documentos-pdf')
         .upload(filePath, file);
 
-      if (uploadError) {
-        throw new Error(`Error al subir el archivo: ${uploadError.message}`);
-      }
+      if (uploadError) throw uploadError;
 
       setStatusMessage('Paso 2: Iniciando el procesamiento en segundo plano...');
 
-      const { error: invokeError } = await supabase.functions.invoke('batch-pdf-processor', {
+      // Capturamos la respuesta de la función
+      const { data, error: invokeError } = await supabase.functions.invoke<{operationName: string}>('batch-pdf-processor', {
         body: { supabasePath: filePath },
       });
 
@@ -85,22 +101,70 @@ export default function PDFUploader() {
         throw new Error(`Error al invocar la función: ${details}`);
       }
       
-      setStatusMessage(`✅ ¡Éxito! El análisis ha comenzado. Este proceso puede tardar varios minutos y se ejecuta en segundo plano. Te notificaremos cuando esté listo.`);
+      const operationName = data?.operationName;
+      if (!operationName) {
+        throw new Error('La función no devolvió un ID de operación.');
+      }
+      
+      // NUEVA LÓGICA: Guardar el trabajo en nuestra tabla de base de datos
+      const { data: jobData, error: jobError } = await supabase
+        .from('doc_ai_jobs')
+        .insert({
+          operation_name: operationName,
+          source_document_name: file.name,
+        })
+        .select('id')
+        .single();
+        
+      if (jobError) throw new Error(`No se pudo registrar el trabajo en la BD: ${jobError.message}`);
+      
+      const jobId = jobData.id;
+
+      // NUEVA LÓGICA: Iniciar el polling
+      setStatusMessage('✅ ¡Éxito! El análisis ha comenzado. Verificando estado...');
+      
+      pollingIntervalRef.current = setInterval(async () => {
+        try {
+          const { data: statusData, error: statusError } = await supabase.functions.invoke<{status: string}>('check-doc-ai-job', {
+            body: { operationName, jobId },
+          });
+
+          if (statusError) {
+            // Si la función de chequeo falla, detenemos el polling
+            setStatusMessage(`Error al verificar el estado: ${await getInvokeErrorDetails(statusError)}`);
+            stopPolling();
+            return;
+          }
+
+          if (statusData?.status === 'COMPLETADO') {
+            setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
+            stopPolling();
+          } else if (statusData?.status === 'FALLIDO') {
+            setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
+            stopPolling();
+          } else {
+             setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
+          }
+
+        } catch (pollError) {
+          setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
+          stopPolling();
+        }
+      }, 20000); // Preguntar cada 20 segundos
 
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       console.error('Error en el proceso de inicio:', error);
       setStatusMessage(`Error: ${msg}`);
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Asegurarse de detener la carga en caso de error inicial
     }
+    // No detenemos isLoading aquí, se mantiene activo durante el polling
   };
 
   // El JSX que renderiza el componente
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Analizador de PDF con IA (con OCR)</h1>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Paso 1: Sube cualquier documento PDF
@@ -109,6 +173,7 @@ export default function PDFUploader() {
           type="file"
           accept=".pdf"
           onChange={handleFileChange}
+          disabled={isLoading}
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
       </div>
@@ -120,18 +185,15 @@ export default function PDFUploader() {
         </div>
       )}
 
-      {file && !isLoading && (
+      {file && (
         <button 
           onClick={handleUploadAndStartBatch}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          disabled={isLoading}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Analizar Documento (Proceso en Lote)
+          {isLoading ? 'Procesando...' : 'Analizar Documento (Proceso en Lote)'}
         </button>
       )}
-
-      {/* Los botones para generar y guardar preguntas han sido removidos 
-          porque ahora el proceso es asíncrono. Los implementaremos 
-          de nuevo cuando tengamos los resultados. */}
     </div>
   );
 }
