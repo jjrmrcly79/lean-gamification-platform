@@ -1,20 +1,3 @@
-[?25l[?2004h
-                                                                                                       
-  >  1. dicshuqncgxkpvitksco [name: jjrmrcly79's Project, org: jlrvqhjdgfxjdgyfrzva, region: us-east-1]
-    2. tilxwopmazrtwqzosaqm [name: tiendas_ecomerce, org: jlrvqhjdgfxjdgyfrzva, region: us-east-2]     
-                                                                                                       
-                                                                                                       
-                                                                                                       
-                                                                                                       
-    ↑/k up • ↓/j down • / filter • q quit • ? more                                                     
-                                                                                                       [D[9A [J[D[2K[?2004l[?25h[?1002l[?1003l[?1006lexport type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
