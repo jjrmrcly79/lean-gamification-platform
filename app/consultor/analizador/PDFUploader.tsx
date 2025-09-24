@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
+import { useRouter } from 'next/navigation';
 
 // --- Funciones de Ayuda (Helpers) ---
 // (Estas funciones se mantienen igual)
@@ -37,22 +38,14 @@ async function getInvokeErrorDetails(err: unknown): Promise<string> {
 
 export default function PDFUploader() {
   const supabase = getSupabaseBrowserClient();
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-
-  // Usamos useRef para el intervalo para evitar problemas con los re-renders
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
+  const isCheckingRef = useRef(false);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setStatusMessage('Archivo seleccionado. Listo para analizar.');
-    }
-  };
-  
-  // NUEVA FUNCIÓN: Se encarga de detener el polling
   const stopPolling = () => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -60,18 +53,60 @@ export default function PDFUploader() {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const selectedFile = event.target.files?.[0];
+  if (selectedFile) {
+    const isPdfMime = selectedFile.type === 'application/pdf';
+    const isPdfExt = /\.pdf$/i.test(selectedFile.name);
+    if (!isPdfMime && !isPdfExt) {
+      setStatusMessage('Por favor selecciona un archivo PDF (.pdf).');
+      return;
+    }
+    const MAX_MB = 25;
+    if (selectedFile.size > MAX_MB * 1024 * 1024) {
+      setStatusMessage(`El PDF supera ${MAX_MB} MB.`);
+      return;
+    }
+    stopPolling(); // cortar polling previo
+    setFile(selectedFile);
+    setStatusMessage('Archivo seleccionado. Listo para analizar.');
+  }
+};
+  
+
   // NUEVA LÓGICA: useEffect para limpiar el intervalo si el componente se desmonta
   useEffect(() => {
-    return () => {
-      stopPolling(); // Limpia el intervalo al salir
-    };
-  }, []);
+  isMountedRef.current = true;
+  return () => {
+    stopPolling();
+    isMountedRef.current = false;
+  };
+}, []);
 
   const handleUploadAndStartBatch = async () => {
     if (!file) {
       alert('Por favor, selecciona un archivo PDF primero.');
       return;
     }
+    const isPdfMime = file.type === 'application/pdf';
+const isPdfExt = /\.pdf$/i.test(file.name);
+if (!isPdfMime && !isPdfExt) {
+  setStatusMessage('El archivo seleccionado no es un PDF válido.');
+  return;
+}
+
+// (opcional) verificación de firma mágica "%PDF-"
+try {
+  const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+  const header = new TextDecoder().decode(head);
+  if (!header.startsWith('%PDF-')) {
+    setStatusMessage('El archivo no parece ser un PDF válido (firma inválida).');
+    return;
+  }
+} catch {
+  setStatusMessage('No se pudo validar el PDF.');
+  return;
+}
     const { data: s } = await supabase.auth.getSession();
     if (!s.session) {
       setStatusMessage('Debes iniciar sesión para analizar.');
@@ -120,64 +155,105 @@ export default function PDFUploader() {
       
       const jobId = jobData.id;
 
-      // NUEVA LÓGICA: Iniciar el polling
-      setStatusMessage('✅ ¡Éxito! El análisis ha comenzado. Verificando estado...');
-      
-      // 👇 dentro de handleUploadAndStartBatch(), donde creas el setInterval:
+     // NUEVA LÓGICA: Iniciar el polling
+setStatusMessage('✅ ¡Éxito! El análisis ha comenzado. Verificando estado...');
+
+// Evita intervalos duplicados si el usuario da 2 clics por accidente
+stopPolling();
+
 pollingIntervalRef.current = setInterval(async () => {
+  if (isCheckingRef.current) return;
+  isCheckingRef.current = true;
+
   try {
     const { data: statusData, error: statusError } =
       await supabase.functions.invoke<{ status: string; outputPrefix?: string }>(
         'check-doc-ai-job',
-        {
-          // 🔸 pasa también sourceDocumentName para que la edge pueda deducir el prefijo
-          body: { operationName, jobId, sourceDocumentName: file.name },
-        }
+        { body: { operationName, jobId, sourceDocumentName: file.name } }
       );
 
     if (statusError) {
-      setStatusMessage(`Error al verificar el estado: ${await getInvokeErrorDetails(statusError)}`);
+      if (isMountedRef.current) {
+        setStatusMessage(`Error al verificar el estado: ${await getInvokeErrorDetails(statusError)}`);
+        setIsLoading(false);
+      }
       stopPolling();
-      setIsLoading(false);
       return;
     }
 
     if (statusData?.status === 'COMPLETADO') {
-      setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
+      if (isMountedRef.current) {
+        setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
+        setIsLoading(false);
+      }
       stopPolling();
-      setIsLoading(false);
 
-      // 👇 AQUÍ va la ingesta de resultados a tu tabla (temas)
-      const outputPrefix = statusData?.outputPrefix; // viene de check-doc-ai-job
+      const outputPrefix = statusData?.outputPrefix;
       if (outputPrefix) {
-        const { data: ingestData, error: ingestError } =
+        // 3) Ingesta de tópicos/temas
+        const { error: ingestError } =
           await supabase.functions.invoke('ingest-doc-ai-output', {
             body: { jobId, outputPrefix },
           });
-
         if (ingestError) {
-          setStatusMessage(`Error al ingerir resultados: ${await getInvokeErrorDetails(ingestError)}`);
-        } else {
+          if (isMountedRef.current) {
+            setStatusMessage(`Error al ingerir resultados: ${await getInvokeErrorDetails(ingestError)}`);
+          }
+          return;
+        }
+        if (isMountedRef.current) {
           setStatusMessage('✅ Resultados ingeridos y temas generados.');
+        }
+
+        // 4) Generar 20 preguntas
+        const { data: jobRow } = await supabase
+          .from('doc_ai_jobs')
+          .select('result_topics')
+          .eq('id', jobId)
+          .single();
+
+        const topics = jobRow?.result_topics ?? null;
+
+        const { error: genErr } = await supabase.functions.invoke(
+          'generate-questions-from-output',
+          { body: { jobId, outputPrefix, sourceDocumentName: file.name, topics } }
+        );
+
+        if (isMountedRef.current) {
+          if (genErr) {
+            setStatusMessage(`Preguntas: error al generar – ${await getInvokeErrorDetails(genErr)}`);
+          } else {
+            setStatusMessage('📝 20 preguntas generadas. Puedes revisarlas y asignar categoría.');
+            router.push(`/consultor/analizador/review/${jobId}`);
+          }
         }
       }
 
     } else if (statusData?.status === 'FALLIDO') {
-      setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
+      if (isMountedRef.current) {
+        setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
+        setIsLoading(false);
+      }
       stopPolling();
-      setIsLoading(false);
 
     } else {
-      setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
+      if (isMountedRef.current) {
+        setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
+      }
     }
-
   } catch (pollError) {
-    setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
+    if (isMountedRef.current) {
+      setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
+      setIsLoading(false);
+    }
     stopPolling();
-    setIsLoading(false);
+  } finally {
+    // 🔒 Siempre libera el lock del ciclo, pase lo que pase
+    isCheckingRef.current = false;
   }
 }, 20000);
- // Preguntar cada 20 segundos
+
+
 
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
@@ -198,7 +274,7 @@ pollingIntervalRef.current = setInterval(async () => {
         </label>
         <input
           type="file"
-          accept=".pdf"
+          accept="application/pdf,.pdf"
           onChange={handleFileChange}
           disabled={isLoading}
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
