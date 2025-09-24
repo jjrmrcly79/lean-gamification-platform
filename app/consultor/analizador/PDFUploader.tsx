@@ -123,37 +123,61 @@ export default function PDFUploader() {
       // NUEVA LÓGICA: Iniciar el polling
       setStatusMessage('✅ ¡Éxito! El análisis ha comenzado. Verificando estado...');
       
-      pollingIntervalRef.current = setInterval(async () => {
-        try {
-          const { data: statusData, error: statusError } = await supabase.functions.invoke<{status: string}>('check-doc-ai-job', {
-            body: { operationName, jobId },
+      // 👇 dentro de handleUploadAndStartBatch(), donde creas el setInterval:
+pollingIntervalRef.current = setInterval(async () => {
+  try {
+    const { data: statusData, error: statusError } =
+      await supabase.functions.invoke<{ status: string; outputPrefix?: string }>(
+        'check-doc-ai-job',
+        {
+          // 🔸 pasa también sourceDocumentName para que la edge pueda deducir el prefijo
+          body: { operationName, jobId, sourceDocumentName: file.name },
+        }
+      );
+
+    if (statusError) {
+      setStatusMessage(`Error al verificar el estado: ${await getInvokeErrorDetails(statusError)}`);
+      stopPolling();
+      setIsLoading(false);
+      return;
+    }
+
+    if (statusData?.status === 'COMPLETADO') {
+      setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
+      stopPolling();
+      setIsLoading(false);
+
+      // 👇 AQUÍ va la ingesta de resultados a tu tabla (temas)
+      const outputPrefix = statusData?.outputPrefix; // viene de check-doc-ai-job
+      if (outputPrefix) {
+        const { data: ingestData, error: ingestError } =
+          await supabase.functions.invoke('ingest-doc-ai-output', {
+            body: { jobId, outputPrefix },
           });
 
-          if (statusError) {
-            // Si la función de chequeo falla, detenemos el polling
-            setStatusMessage(`Error al verificar el estado: ${await getInvokeErrorDetails(statusError)}`);
-            stopPolling();
-            return;
-          }
-
-          if (statusData?.status === 'COMPLETADO') {
-            setStatusMessage('🎉 ¡Análisis completado! Los resultados han sido guardados.');
-            stopPolling();
-            setIsLoading(false);
-          } else if (statusData?.status === 'FALLIDO') {
-            setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
-            stopPolling();
-            setIsLoading(false);
-          } else {
-             setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
-          }
-
-        } catch (pollError) {
-          setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
-          stopPolling();
-          setIsLoading(false);
+        if (ingestError) {
+          setStatusMessage(`Error al ingerir resultados: ${await getInvokeErrorDetails(ingestError)}`);
+        } else {
+          setStatusMessage('✅ Resultados ingeridos y temas generados.');
         }
-      }, 20000); // Preguntar cada 20 segundos
+      }
+
+    } else if (statusData?.status === 'FALLIDO') {
+      setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
+      stopPolling();
+      setIsLoading(false);
+
+    } else {
+      setStatusMessage('⏳ El análisis está en progreso. Verificando de nuevo en 20 segundos...');
+    }
+
+  } catch (pollError) {
+    setStatusMessage(`Error en el polling: ${getErrorMessage(pollError)}`);
+    stopPolling();
+    setIsLoading(false);
+  }
+}, 20000);
+ // Preguntar cada 20 segundos
 
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
