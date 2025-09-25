@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 
-// --------- Tipos locales (ligeros) ----------
+// --------- Tipos locales ----------
 type StagingRow = {
   id: string;
   job_id: number;
   source_document_name: string | null;
-  topic_tags: any | null;
+  topic_tags: unknown | null;
   category: string | null;
   subcategory: string | null;
   question: {
@@ -23,6 +24,8 @@ type StagingRow = {
   status: 'draft' | 'approved' | 'rejected' | string;
   created_at: string;
 };
+
+type StagingUpdate = Partial<Pick<StagingRow, 'category' | 'subcategory' | 'status'>>;
 
 // nombre de tabla (cast para saltar tipos del cliente generado)
 const STAGING = 'staging_generated_questions' as const;
@@ -47,8 +50,10 @@ export default function ReviewPage() {
     let mounted = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from(STAGING as any)
+
+      // usamos from(STAGING as any) para esquivar el union de tablas del tipo generado
+      const { data, error } = await (supabase as any)
+        .from(STAGING)
         .select('*')
         .eq('job_id', jobId)
         .order('created_at', { ascending: true });
@@ -70,14 +75,14 @@ export default function ReviewPage() {
   const setRowLocal = (id: string, patch: Partial<StagingRow>) =>
     setRows(prev => prev.map(r => (r.id === id ? { ...r, ...patch } as StagingRow : r)));
 
-  const saveRow = async (id: string, patch: Partial<StagingRow>) => {
+  const saveRow = async (id: string, patch: StagingUpdate) => {
     try {
       setSavingIds(s => ({ ...s, [id]: true }));
       setRowLocal(id, patch); // actualización optimista
 
-      const { error } = await supabase
-        .from(STAGING as any)
-        .update(patch as any)
+      const { error } = await (supabase as any)
+        .from(STAGING)
+        .update(patch as unknown)
         .eq('id', id);
 
       if (error) {
@@ -104,22 +109,26 @@ export default function ReviewPage() {
     );
     if (error) {
       console.error(error);
+      // Leemos cuerpo de error de la edge de forma segura (sin ts-ignore)
       let details = '';
       try {
-        // @ts-ignore - intentamos leer el cuerpo de error si existe
-        details = await (error?.context?.response?.text?.() ?? '');
-      } catch {}
-      setMessage(`Error al promover: ${details || error.message}`);
+        const resp = (error as unknown as { context?: { response?: Response } })?.context?.response;
+        if (resp && typeof resp.text === 'function') {
+          details = await resp.text();
+        }
+      } catch { /* noop */ }
+      setMessage(`Error al promover: ${details || (error as { message?: string }).message || 'Desconocido'}`);
     } else {
-      setMessage(`Promovidas: ${data?.inserted ?? 'OK'}`);
+      setMessage(`Promovidas: ${((data as unknown) as { inserted?: number })?.inserted ?? 'OK'}`);
     }
 
     // refrescar lista
-    const { data: refreshed } = await supabase
-      .from(STAGING as any)
+    const { data: refreshed } = await (supabase as any)
+      .from(STAGING)
       .select('*')
       .eq('job_id', jobId)
       .order('created_at', { ascending: true });
+
     setRows(((refreshed ?? []) as unknown) as StagingRow[]);
   };
 
@@ -230,7 +239,7 @@ export default function ReviewPage() {
                       Aprobar
                     </button>
                     <button
-                      className="px-3 py-1 rounded-md bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50"
+                      className="px-3 py-1 rounded-md bg-red-600 text-white text-sm hover:bg-red-700 disabled={saving}"
                       onClick={() => handleStatus(r.id, 'rejected')}
                       disabled={saving}
                     >
