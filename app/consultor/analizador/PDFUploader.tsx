@@ -191,16 +191,21 @@ pollingIntervalRef.current = setInterval(async () => {
       const outputPrefix = statusData?.outputPrefix;
       if (outputPrefix) {
         // 3) Ingesta de tópicos/temas
-        const { error: ingestError } =
-          await supabase.functions.invoke('ingest-doc-ai-output', {
-            body: { jobId, outputPrefix },
-          });
-        if (ingestError) {
-          if (isMountedRef.current) {
-            setStatusMessage(`Error al ingerir resultados: ${await getInvokeErrorDetails(ingestError)}`);
-          }
-          return;
-        }
+        const { data: ingestData, error: ingestError } =
+  await supabase.functions.invoke('ingest-doc-ai-output', {
+    body: { jobId, outputPrefix },
+  });
+
+if (ingestError) {
+  console.error('INGEST_ERR_OBJECT:', ingestError);                  // 👈 objeto error del SDK
+  const details = await getInvokeErrorDetails(ingestError);         // 👈 cuerpo de la Edge (texto/JSON)
+  console.error('INGEST_ERR_BODY:', details);                       // 👈 el “porqué” real
+  setStatusMessage(`Error al ingerir resultados: ${details}`);
+  return;
+}
+
+console.log('INGEST_OK:', ingestData);
+
         if (isMountedRef.current) {
           setStatusMessage('✅ Resultados ingeridos y temas generados.');
         }
@@ -214,22 +219,26 @@ pollingIntervalRef.current = setInterval(async () => {
 
         const topics = jobRow?.result_topics ?? null;
 
-        const { error: genErr } = await supabase.functions.invoke(
-          'generate-questions-from-output',
-          { body: { jobId, outputPrefix, sourceDocumentName: file.name, topics } }
-        );
+        const { data: genData, error: genErr } = await supabase.functions.invoke(
+  'generate-questions-from-output',
+  { body: { jobId, outputPrefix, sourceDocumentName: file.name, topics } }
+);
 
-        if (isMountedRef.current) {
-          if (genErr) {
-            setStatusMessage(`Preguntas: error al generar – ${await getInvokeErrorDetails(genErr)}`);
-          } else {
-            setStatusMessage('📝 20 preguntas generadas. Puedes revisarlas y asignar categoría.');
-            router.push(`/consultor/analizador/review/${jobId}`);
-          }
+if (genErr) {
+  console.error('GEN_ERR_OBJECT:', genErr);                         // 👈 objeto error del SDK
+  const details = await getInvokeErrorDetails(genErr);              // 👈 cuerpo devuelto por la Edge
+  console.error('GEN_ERR_BODY:', details);
+  setStatusMessage(`Preguntas: error al generar – ${details}`);
+} else {
+  console.log('GEN_OK:', genData);
+  setStatusMessage('📝 20 preguntas generadas. Puedes revisarlas y asignar categoría.');
+  router.push(`/consultor/analizador/review/${jobId}`);
+}
+
         }
       }
 
-    } else if (statusData?.status === 'FALLIDO') {
+     else if (statusData?.status === 'FALLIDO') {
       if (isMountedRef.current) {
         setStatusMessage('❌ El análisis ha fallado durante el procesamiento.');
         setIsLoading(false);
