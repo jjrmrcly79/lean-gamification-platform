@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 
-// --------- Tipos locales ----------
+// --------- Tipos ----------
 type StagingRow = {
   id: string;
   job_id: number;
@@ -27,7 +27,14 @@ type StagingRow = {
 
 type StagingUpdate = Partial<Pick<StagingRow, 'category' | 'subcategory' | 'status'>>;
 
-// nombre de tabla (cast para saltar tipos del cliente generado)
+type JobRow = {
+  id: number;
+  output_prefix: string | null;
+  source_document_name: string | null;
+  result_topics: { term: string; count: number }[] | null;
+};
+
+// nombre de tabla
 const STAGING = 'staging_generated_questions' as const;
 
 export default function ReviewPage() {
@@ -40,36 +47,118 @@ export default function ReviewPage() {
   const [savingIds, setSavingIds] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<string>('');
 
+  const [job, setJob] = useState<JobRow | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+
   const approvedCount = useMemo(
     () => rows.filter(r => r.status === 'approved').length,
     [rows]
   );
 
-  // ---- CARGA INICIAL ----
+  // ---- CARGA JOB + STAGING ----
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setMessage('');
+
+    // 1) Job
+    const { data: jobData, error: jobErr } = await (supabase as any)
+      .from('doc_ai_jobs')
+      .select('id, output_prefix, source_document_name, result_topics')
+      .eq('id', jobId)
+      .single();
+
+    if (jobErr) {
+      console.error(jobErr);
+      setMessage(`Error cargando job: ${jobErr.message}`);
+      setLoading(false);
+      return;
+    }
+    setJob(jobData as JobRow);
+
+    // 2) Staging
+    const { data, error } = await (supabase as any)
+      .from(STAGING)
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error(error);
+      setMessage(`Error cargando preguntas: ${error.message}`);
+    } else {
+      setRows(((data ?? []) as unknown) as StagingRow[]);
+    }
+    setLoading(false);
+  }, [jobId, supabase]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
-      setLoading(true);
+      if (!mounted) return;
+      await loadAll();
+    })();
+    return () => { mounted = false; };
+  }, [loadAll]);
 
-      // usamos from(STAGING as any) para esquivar el union de tablas del tipo generado
-      const { data, error } = await (supabase as any)
+  // ---- Generar preguntas (si staging está vacío) ----
+  const generateQuestions = async () => {
+    if (!job) {
+      setMessage('Job no cargado.');
+      return;
+    }
+    const outputPrefix = job.output_prefix;
+    const sourceDocumentName = job.source_document_name;
+
+    if (!outputPrefix || !sourceDocumentName) {
+      setMessage('El job no tiene output_prefix o source_document_name.');
+      return;
+    }
+
+    setGenLoading(true);
+    setMessage('Generando preguntas con IA…');
+
+    const { data, error } = await supabase.functions.invoke(
+      'generate-questions-from-output',
+      {
+        body: {
+          jobId,
+          outputPrefix,
+          sourceDocumentName,
+          topics: job.result_topics ?? null, // opcional
+        }
+      }
+    );
+
+    if (error) {
+      console.error(error);
+      let details = '';
+      try {
+        const resp = (error as unknown as { context?: { response?: Response } })?.context?.response;
+        if (resp && typeof resp.text === 'function') {
+          details = await resp.text();
+        }
+      } catch { /* noop */ }
+      setMessage(`Error generando preguntas: ${details || (error as { message?: string }).message || 'Desconocido'}`);
+    } else {
+      setMessage('Preguntas generadas. Refrescando…');
+      // recargar staging
+      const { data: refreshed, error: refErr } = await (supabase as any)
         .from(STAGING)
         .select('*')
         .eq('job_id', jobId)
         .order('created_at', { ascending: true });
 
-      if (!mounted) return;
-      if (error) {
-        console.error(error);
-        setMessage(`Error cargando preguntas: ${error.message}`);
+      if (refErr) {
+        console.error(refErr);
+        setMessage(`Error refrescando: ${refErr.message}`);
       } else {
-        setRows(((data ?? []) as unknown) as StagingRow[]);
-        setMessage('');
+        setRows(((refreshed ?? []) as unknown) as StagingRow[]);
+        setMessage(`Listo. Generadas: ${(data as any)?.inserted ?? 'OK'}`);
       }
-      setLoading(false);
-    })();
-    return () => { mounted = false; };
-  }, [jobId, supabase]);
+    }
+    setGenLoading(false);
+    setTimeout(() => setMessage(''), 2500);
+  };
 
   // ---- Helpers de edición ----
   const setRowLocal = (id: string, patch: Partial<StagingRow>) =>
@@ -109,7 +198,6 @@ export default function ReviewPage() {
     );
     if (error) {
       console.error(error);
-      // Leemos cuerpo de error de la edge de forma segura (sin ts-ignore)
       let details = '';
       try {
         const resp = (error as unknown as { context?: { response?: Response } })?.context?.response;
@@ -143,18 +231,31 @@ export default function ReviewPage() {
         </p>
       </header>
 
-      <section className="flex items-center justify-between">
+      <section className="flex items-center justify-between gap-3 flex-wrap">
         <div className="text-sm text-gray-700">
           {loading ? 'Cargando…' : `${rows.length} preguntas (aprobadas: ${approvedCount})`}
           {message ? <span className="ml-2 text-gray-500">• {message}</span> : null}
         </div>
-        <button
-          onClick={promoteApproved}
-          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-          disabled={approvedCount === 0}
-        >
-          Promover aprobadas a Master
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={promoteApproved}
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            disabled={approvedCount === 0}
+          >
+            Promover aprobadas a Master
+          </button>
+
+          {/* Botón para generar preguntas si no hay filas */}
+          <button
+            onClick={generateQuestions}
+            className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+            disabled={genLoading || loading || !job || rows.length > 0}
+            title={rows.length > 0 ? 'Ya hay preguntas en staging' : 'Generar preguntas desde la salida de DocAI'}
+          >
+            {genLoading ? 'Generando…' : 'Generar preguntas ahora'}
+          </button>
+        </div>
       </section>
 
       <div className="space-y-4">
@@ -239,7 +340,7 @@ export default function ReviewPage() {
                       Aprobar
                     </button>
                     <button
-                      className="px-3 py-1 rounded-md bg-red-600 text-white text-sm hover:bg-red-700 disabled={saving}"
+                      className="px-3 py-1 rounded-md bg-red-600 text-white text-sm hover:bg-red-700"
                       onClick={() => handleStatus(r.id, 'rejected')}
                       disabled={saving}
                     >
@@ -259,7 +360,10 @@ export default function ReviewPage() {
 
         {!loading && rows.length === 0 && (
           <div className="text-sm text-gray-600">
-            No hay preguntas en staging para este job. Asegúrate de haber corrido la generación.
+            No hay preguntas en staging para este job.
+            {job?.output_prefix
+              ? ' Puedes generarlas aquí mismo con el botón verde.'
+              : ' El job no tiene output_prefix registrado.'}
           </div>
         )}
       </div>
