@@ -1,15 +1,13 @@
 // app/exam/loading/[attemptId]/page.tsx
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase-client';
 import { Button } from '@/components/ui/button';
-import Lottie from "lottie-react";
-import animationData from "../../../../public/animation.json";
+import Lottie from 'lottie-react';
 
-// Hook personalizado para el polling
+// --- Hook de polling ---
 function useInterval(callback: () => void, delay: number | null) {
   const savedCallback = useRef<(() => void) | null>(null);
 
@@ -19,9 +17,7 @@ function useInterval(callback: () => void, delay: number | null) {
 
   useEffect(() => {
     function tick() {
-      if (savedCallback.current) {
-        savedCallback.current();
-      }
+      savedCallback.current?.();
     }
     if (delay !== null) {
       const id = setInterval(tick, delay);
@@ -34,44 +30,53 @@ export default function LoadingExamPage() {
   const router = useRouter();
   const params = useParams();
   const supabase = getSupabaseBrowserClient();
-  const attemptId = Array.isArray(params.attemptId) ? params.attemptId[0] : params.attemptId;
 
-  const [userName, setUserName] = useState('');
-  const [isPolling, setIsPolling] = useState(true);
-  // --- NUEVO ESTADO: Para controlar la vista ---
-  const [pageState, setPageState] = useState<'generating' | 'ready'>('generating');
+  const attemptParam = Array.isArray(params.attemptId)
+    ? params.attemptId[0]
+    : (params.attemptId as string | undefined);
 
-  // --- NUEVO ESTADO Y EFECTO PARA LA ANIMACIÓN FLUIDA ---
+  // normalizamos a string (si no viene, queda vacío y simplemente no poll)
+  const attemptId = attemptParam ?? '';
+
+  const [userName, setUserName] = useState('participante');
+
+  // Estado de animación (se carga desde /public por fetch)
+  const [animationData, setAnimationData] = useState<any>(null);
   const [isAnimationVisible, setIsAnimationVisible] = useState(false);
 
-  useEffect(() => {
-    // Este truco retrasa la carga de Lottie un instante para que no se congele la UI inicial.
-    const timer = setTimeout(() => {
-      setIsAnimationVisible(true);
-    }, 100); // 100ms es suficiente
+  // Estado de página
+  const [isPolling, setIsPolling] = useState(true);
+  const [pageState, setPageState] = useState<'generating' | 'ready'>('generating');
 
-    return () => clearTimeout(timer); // Limpieza al desmontar el componente
-  }, []);
-  // --- FIN DEL NUEVO CÓDIGO ---
-  
-  // Obtener el nombre del usuario
+  // Cargar animación desde /public (NO import directo)
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    let alive = true;
+    // pequeño delay para no bloquear el primer render
+    const t = setTimeout(() => setIsAnimationVisible(true), 100);
+
+    fetch('/animation.json')
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((json) => { if (alive) setAnimationData(json); })
+      .catch((e) => console.error('Lottie load error', e));
+
+    return () => { alive = false; clearTimeout(t); };
+  }, []);
+
+  // Obtener nombre de usuario
+  useEffect(() => {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', user.id)
-          .single();
-        
-        setUserName(profile?.full_name || profile?.email || 'participante');
-      }
-    };
-    fetchUserProfile();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', user.id)
+        .single();
+      setUserName(profile?.full_name || profile?.email || 'participante');
+    })();
   }, [supabase]);
 
-  // Lógica de Polling modificada
+  // Polling del estado del intento
   useInterval(async () => {
     if (!attemptId) return;
 
@@ -82,17 +87,16 @@ export default function LoadingExamPage() {
       .single();
 
     if (error) {
-      console.error("Error al verificar el estado:", error);
-      setIsPolling(false); // Detenemos el polling si hay un error
+      console.error('Error al verificar el estado:', error);
+      setIsPolling(false);
       return;
     }
 
-    // --- CAMBIO PRINCIPAL: En lugar de redirigir, cambiamos el estado de la página ---
     if (data?.status === 'ready_to_start') {
-      setIsPolling(false); // Detenemos el polling
-      setPageState('ready'); // Cambiamos la vista a "listo"
+      setIsPolling(false);
+      setPageState('ready');
     }
-  }, isPolling ? 5000 : null); // Sigue comprobando cada 5 segundos
+  }, isPolling ? 5000 : null);
 
   const handleStartExam = () => {
     if (attemptId) {
@@ -102,15 +106,23 @@ export default function LoadingExamPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-white text-center p-6">
-      {/* --- RENDERIZADO CONDICIONAL: Muestra una vista u otra según el estado --- */}
       {pageState === 'generating' ? (
         <>
-          <Lottie 
-            animationData={animationData} 
-            loop={true} 
-            style={{ width: 250, height: 250 }}
-            className="mb-8"
-          />
+          {/* Solo renderiza Lottie cuando está visible y ya cargó el JSON */}
+          {isAnimationVisible && animationData ? (
+            <Lottie
+              animationData={animationData}
+              loop
+              autoplay
+              style={{ width: 250, height: 250 }}
+              className="mb-8"
+            />
+          ) : (
+            <div className="mb-8 h-[250px] w-[250px] flex items-center justify-center text-gray-400">
+              Cargando…
+            </div>
+          )}
+
           <h1 className="text-3xl font-bold text-[#1A237E] mb-2">
             ¡Hola, {userName}!
           </h1>
@@ -121,9 +133,15 @@ export default function LoadingExamPage() {
       ) : (
         <>
           <div className="mb-8">
-            {/* Puedes poner un ícono de "check" o "listo" aquí si quieres */}
-            <svg className="mx-auto h-24 w-24 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="mx-auto h-24 w-24 text-green-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-[#1A237E] mb-2">
@@ -132,7 +150,7 @@ export default function LoadingExamPage() {
           <p className="text-xl text-gray-600 mb-10">
             Espera la indicación del consultor para comenzar.
           </p>
-          <Button 
+          <Button
             onClick={handleStartExam}
             className="px-12 py-6 text-xl font-bold bg-[#1A237E] hover:bg-[#2C388D] text-white rounded-lg"
           >
