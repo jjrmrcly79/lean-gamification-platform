@@ -1,8 +1,8 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 5
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge"; // Importamos el componente Badge
+import { Badge } from "@/components/ui/badge";
 import Image from 'next/image';
 
 export default function PresentationPage() {
@@ -96,9 +96,7 @@ export default function PresentationPage() {
             </div>
         </section>
 
-        {/* ======================================================================= */}
-        {/* PANTALLA 5: EL MOTOR (SISTEMA DE ETIQUETADO) (NUEVA)                    */}
-        {/* ======================================================================= */}
+        {/* --- PANTALLA 5: EL MOTOR (SISTEMA DE ETIQUETADO) --- */}
         <section id="tagging-system" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
           <div className="text-center mb-10">
               <h2 className="text-3xl md:text-5xl font-bold">
@@ -110,19 +108,17 @@ export default function PresentationPage() {
           </div>
 
           <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-            {/* Columna Izquierda: Visualización del Concepto */}
             <div className="flex flex-col items-center justify-center p-6">
               <Card className="w-full max-w-sm shadow-lg">
                 <CardHeader>
                   <CardTitle>Pregunta Ejemplo</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">"Compare el sistema JIT con el modelo EOQ, analizando las diferencias en sus supuestos..."</p>
+                  {/* 👇 CORRECCIÓN: Se reemplazaron las comillas que rodeaban el texto. */}
+                  <p className="text-muted-foreground">&quot;Compare el sistema JIT con el modelo EOQ, analizando las diferencias en sus supuestos...&quot;</p>
                 </CardContent>
               </Card>
-              
               <div className="text-2xl my-4">👇</div>
-
               <div className="flex flex-wrap justify-center gap-3">
                 <Badge variant="secondary">Dominio: Cadena de Suministro</Badge>
                 <Badge variant="secondary">Conocimiento: Conceptual</Badge>
@@ -130,35 +126,10 @@ export default function PresentationPage() {
               </div>
             </div>
 
-            {/* Columna Derecha: Explicación de las Etiquetas */}
             <div className="flex flex-col gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>1. Dominio Temático</CardTitle>
-                  <CardContent className="pt-4">
-                    <p>Es el área de contenido principal. Nos dice <span className="font-semibold text-primary">&apos;de qué&apos;</span> trata la pregunta.</p>
-                    <p className="text-sm text-muted-foreground mt-2">Ej: Gestión Financiera, Liderazgo, etc.</p>
-                  </CardContent>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>2. Tipo de Conocimiento</CardTitle>
-                  <CardContent className="pt-4">
-                    <p>Clasifica la naturaleza del saber evaluado. Nos dice <span className="font-semibold text-primary">&apos;qué clase&apos;</span> de información es.</p>
-                    <p className="text-sm text-muted-foreground mt-2">Fáctico, Conceptual, Procedimental o Metacognitivo.</p>
-                  </CardContent>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>3. Nivel Cognitivo</CardTitle>
-                  <CardContent className="pt-4">
-                    <p>Define la habilidad mental requerida. Nos dice <span className="font-semibold text-primary">&apos;cómo pensar&apos;</span> para responder.</p>
-                    <p className="text-sm text-muted-foreground mt-2">Recordar, Aplicar, Analizar, Crear, etc.</p>
-                  </CardContent>
-                </CardHeader>
-              </Card>
+              <Card><CardHeader><CardTitle>1. Dominio Temático</CardTitle><CardContent className="pt-4"><p>Es el área de contenido principal. Nos dice <span className="font-semibold text-primary">&apos;de qué&apos;</span> trata la pregunta.</p><p className="text-sm text-muted-foreground mt-2">Ej: Gestión Financiera, Liderazgo, etc.</p></CardContent></CardHeader></Card>
+              <Card><CardHeader><CardTitle>2. Tipo de Conocimiento</CardTitle><CardContent className="pt-4"><p>Clasifica la naturaleza del saber evaluado. Nos dice <span className="font-semibold text-primary">&apos;qué clase&apos;</span> de información es.</p><p className="text-sm text-muted-foreground mt-2">Fáctico, Conceptual, Procedimental o Metacognitivo.</p></CardContent></CardHeader></Card>
+              <Card><CardHeader><CardTitle>3. Nivel Cognitivo</CardTitle><CardContent className="pt-4"><p>Define la habilidad mental requerida. Nos dice <span className="font-semibold text-primary">&apos;cómo pensar&apos;</span> para responder.</p><p className="text-sm text-muted-foreground mt-2">Recordar, Aplicar, Analizar, Crear, etc.</p></CardContent></CardHeader></Card>
             </div>
           </div>
         </section>
