@@ -1,7 +1,8 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 5
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge"; // Importamos el componente Badge
 import Image from 'next/image';
 
 export default function PresentationPage() {
@@ -14,9 +15,7 @@ export default function PresentationPage() {
       </header>
 
       <main className="flex flex-col">
-        {/* ======================================================================= */}
-        {/* PANTALLA 1: EL GANCHO (HERO SECTION)                                    */}
-        {/* ======================================================================= */}
+        {/* --- PANTALLA 1: EL GANCHO (HERO SECTION) --- */}
         <section className="flex flex-col items-center justify-center text-center p-4 min-h-screen bg-background">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             No Creamos Índices, Construimos
@@ -33,9 +32,7 @@ export default function PresentationPage() {
           </div>
         </section>
 
-        {/* ======================================================================= */}
-        {/* PANTALLA 2: LA BASE (FRAMEWORK VALIDADO)                                */}
-        {/* ======================================================================= */}
+        {/* --- PANTALLA 2: LA BASE (FRAMEWORK VALIDADO) --- */}
         <section id="framework" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
           <div className="text-center">
               <h2 className="text-3xl md:text-5xl font-bold">
@@ -45,35 +42,23 @@ export default function PresentationPage() {
                   Usamos la taxonomía de Anderson & Krathwohl (revisión de Bloom), el estándar de oro en diseño educativo. La clave es su <span className="font-semibold text-foreground">matriz bidimensional</span>.
               </p>
           </div>
-          
           <div className="mt-10 grid md:grid-cols-2 gap-8 w-full max-w-4xl">
               <Card className="bg-background">
                   <CardHeader><CardTitle>Antes: La Escalera Lineal</CardTitle></CardHeader>
                   <CardContent>
                       <p className="text-muted-foreground">El modelo original de Bloom organizaba el conocimiento en 6 niveles secuenciales.</p>
                       <ul className="mt-4 space-y-2 text-left font-medium">
-                          <li>1. Conocimiento</li>
-                          <li>2. Comprensión</li>
-                          <li>3. Aplicación</li>
-                          <li>4. Análisis</li>
-                          <li>5. Síntesis</li>
-                          <li>6. Evaluación</li>
+                          <li>1. Conocimiento</li><li>2. Comprensión</li><li>3. Aplicación</li><li>4. Análisis</li><li>5. Síntesis</li><li>6. Evaluación</li>
                       </ul>
                   </CardContent>
               </Card>
-
               <a href="#cognitive-levels" className="block transition-transform duration-200 hover:scale-[1.02]">
                 <Card className="border-primary border-2 h-full">
                     <CardHeader><CardTitle>Ahora: La Matriz Dinámica</CardTitle></CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">El modelo revisado usa verbos de acción y separa el <span className="font-semibold text-primary">proceso</span> del <span className="font-semibold text-primary">conocimiento</span>.</p>
                         <ul className="mt-4 space-y-2 text-left font-medium">
-                            <li>1. Recordar</li>
-                            <li>2. Comprender</li>
-                            <li>3. Aplicar</li>
-                            <li>4. Analizar</li>
-                            <li>5. Evaluar</li>
-                            <li className="text-primary">6. Crear</li>
+                            <li>1. Recordar</li><li>2. Comprender</li><li>3. Aplicar</li><li>4. Analizar</li><li>5. Evaluar</li><li className="text-primary">6. Crear</li>
                         </ul>
                     </CardContent>
                 </Card>
@@ -81,9 +66,7 @@ export default function PresentationPage() {
           </div>
         </section>
 
-        {/* ======================================================================= */}
-        {/* PANTALLA 3: LOS "ESCALONES" DEL PENSAMIENTO                             */}
-        {/* ======================================================================= */}
+        {/* --- PANTALLA 3: LOS "ESCALONES" DEL PENSAMIENTO --- */}
         <section id="cognitive-levels" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
           <div className="text-center mb-10">
               <h2 className="text-3xl md:text-5xl font-bold">Dimensión 1: Los 6 Niveles del Proceso Cognitivo</h2>
@@ -99,37 +82,85 @@ export default function PresentationPage() {
           </div>
         </section>
 
-        {/* ======================================================================= */}
-        {/* PANTALLA 4: LOS TIPOS DE CONOCIMIENTO                                   */}
-        {/* ======================================================================= */}
+        {/* --- PANTALLA 4: LOS TIPOS DE CONOCIMIENTO --- */}
         <section id="knowledge-types" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
             <div className="text-center mb-10">
                 <h2 className="text-3xl md:text-5xl font-bold">Dimensión 2: Los 4 Tipos de Conocimiento</h2>
-                <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                    No solo importa <span className="font-semibold text-foreground">cómo</span> piensas, sino <span className="font-semibold text-foreground">sobre qué</span> estás pensando. Esta dimensión clasifica la naturaleza del contenido.
-                </p>
+                <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">No solo importa <span className="font-semibold text-foreground">cómo</span> piensas, sino <span className="font-semibold text-foreground">sobre qué</span> estás pensando. Esta dimensión clasifica la naturaleza del contenido.</p>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
-                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
-                    <CardHeader><CardTitle className="text-primary">A. Fáctico</CardTitle></CardHeader>
-                    <CardContent><p>Los elementos básicos y datos de una disciplina. La materia prima del conocimiento.</p><p className="mt-2 font-semibold text-sm">Ej: Terminología, fechas, detalles específicos.</p></CardContent>
-                </Card>
-                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
-                    <CardHeader><CardTitle className="text-primary">B. Conceptual</CardTitle></CardHeader>
-                    <CardContent><p>Las interrelaciones entre los elementos básicos. El mapa que conecta los datos.</p><p className="mt-2 font-semibold text-sm">Ej: Teorías, modelos, principios, clasificaciones.</p></CardContent>
-                </Card>
-                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
-                    <CardHeader><CardTitle className="text-primary">C. Procedimental</CardTitle></CardHeader>
-                    {/* 👇 CORRECCIÓN 1: Se reemplazó "..." por &quot;...&quot; */}
-                    <CardContent><p>El &quot;cómo&quot; hacer algo. El conocimiento puesto en acción.</p><p className="mt-2 font-semibold text-sm">Ej: Técnicas, métodos, algoritmos, habilidades.</p></CardContent>
-                </Card>
-                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
-                    <CardHeader><CardTitle className="text-primary">D. Metacognitivo</CardTitle></CardHeader>
-                    {/* 👇 CORRECCIÓN 2: Se reemplazó "..." por &quot;...&quot; */}
-                    <CardContent><p>La conciencia sobre el propio proceso de aprendizaje. &quot;Pensar sobre cómo piensas&quot;.</p><p className="mt-2 font-semibold text-sm">Ej: Estrategias de aprendizaje, autoconocimiento.</p></CardContent>
-                </Card>
+                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2"><CardHeader><CardTitle className="text-primary">A. Fáctico</CardTitle></CardHeader><CardContent><p>Los elementos básicos y datos de una disciplina. La materia prima del conocimiento.</p><p className="mt-2 font-semibold text-sm">Ej: Terminología, fechas, detalles específicos.</p></CardContent></Card>
+                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2"><CardHeader><CardTitle className="text-primary">B. Conceptual</CardTitle></CardHeader><CardContent><p>Las interrelaciones entre los elementos básicos. El mapa que conecta los datos.</p><p className="mt-2 font-semibold text-sm">Ej: Teorías, modelos, principios, clasificaciones.</p></CardContent></Card>
+                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2"><CardHeader><CardTitle className="text-primary">C. Procedimental</CardTitle></CardHeader><CardContent><p>El &quot;cómo&quot; hacer algo. El conocimiento puesto en acción.</p><p className="mt-2 font-semibold text-sm">Ej: Técnicas, métodos, algoritmos, habilidades.</p></CardContent></Card>
+                <Card className="bg-background transition-transform duration-200 hover:-translate-y-2"><CardHeader><CardTitle className="text-primary">D. Metacognitivo</CardTitle></CardHeader><CardContent><p>La conciencia sobre el propio proceso de aprendizaje. &quot;Pensar sobre cómo piensas&quot;.</p><p className="mt-2 font-semibold text-sm">Ej: Estrategias de aprendizaje, autoconocimiento.</p></CardContent></Card>
             </div>
+        </section>
+
+        {/* ======================================================================= */}
+        {/* PANTALLA 5: EL MOTOR (SISTEMA DE ETIQUETADO) (NUEVA)                    */}
+        {/* ======================================================================= */}
+        <section id="tagging-system" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
+          <div className="text-center mb-10">
+              <h2 className="text-3xl md:text-5xl font-bold">
+                  Nuestro Motor: Cada Pregunta es un Dato Inteligente
+              </h2>
+              <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+                  Así es como aplicamos la teoría. Cada pregunta en nuestro sistema recibe 3 etiquetas clave que la convierten en una pieza analizable.
+              </p>
+          </div>
+
+          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            {/* Columna Izquierda: Visualización del Concepto */}
+            <div className="flex flex-col items-center justify-center p-6">
+              <Card className="w-full max-w-sm shadow-lg">
+                <CardHeader>
+                  <CardTitle>Pregunta Ejemplo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">"Compare el sistema JIT con el modelo EOQ, analizando las diferencias en sus supuestos..."</p>
+                </CardContent>
+              </Card>
+              
+              <div className="text-2xl my-4">👇</div>
+
+              <div className="flex flex-wrap justify-center gap-3">
+                <Badge variant="secondary">Dominio: Cadena de Suministro</Badge>
+                <Badge variant="secondary">Conocimiento: Conceptual</Badge>
+                <Badge variant="destructive">Nivel: Analizar</Badge>
+              </div>
+            </div>
+
+            {/* Columna Derecha: Explicación de las Etiquetas */}
+            <div className="flex flex-col gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>1. Dominio Temático</CardTitle>
+                  <CardContent className="pt-4">
+                    <p>Es el área de contenido principal. Nos dice <span className="font-semibold text-primary">&apos;de qué&apos;</span> trata la pregunta.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Ej: Gestión Financiera, Liderazgo, etc.</p>
+                  </CardContent>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>2. Tipo de Conocimiento</CardTitle>
+                  <CardContent className="pt-4">
+                    <p>Clasifica la naturaleza del saber evaluado. Nos dice <span className="font-semibold text-primary">&apos;qué clase&apos;</span> de información es.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Fáctico, Conceptual, Procedimental o Metacognitivo.</p>
+                  </CardContent>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>3. Nivel Cognitivo</CardTitle>
+                  <CardContent className="pt-4">
+                    <p>Define la habilidad mental requerida. Nos dice <span className="font-semibold text-primary">&apos;cómo pensar&apos;</span> para responder.</p>
+                    <p className="text-sm text-muted-foreground mt-2">Recordar, Aplicar, Analizar, Crear, etc.</p>
+                  </CardContent>
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
         </section>
       </main>
     </div>
