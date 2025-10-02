@@ -1,4 +1,4 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 4
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +62,6 @@ export default function PresentationPage() {
                   </CardContent>
               </Card>
 
-              {/* 👇 CAMBIO: La tarjeta ahora es un enlace <a> */}
               <a href="#cognitive-levels" className="block transition-transform duration-200 hover:scale-[1.02]">
                 <Card className="border-primary border-2 h-full">
                     <CardHeader><CardTitle>Ahora: La Matriz Dinámica</CardTitle></CardHeader>
@@ -101,7 +100,7 @@ export default function PresentationPage() {
         </section>
 
         {/* ======================================================================= */}
-        {/* PANTALLA 4: LOS TIPOS DE CONOCIMIENTO (NUEVA)                           */}
+        {/* PANTALLA 4: LOS TIPOS DE CONOCIMIENTO                                   */}
         {/* ======================================================================= */}
         <section id="knowledge-types" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
             <div className="text-center mb-10">
@@ -111,7 +110,6 @@ export default function PresentationPage() {
                 </p>
             </div>
             
-            {/* Contenedor para las 4 tarjetas de conocimiento */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
                 <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
                     <CardHeader><CardTitle className="text-primary">A. Fáctico</CardTitle></CardHeader>
@@ -123,11 +121,13 @@ export default function PresentationPage() {
                 </Card>
                 <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
                     <CardHeader><CardTitle className="text-primary">C. Procedimental</CardTitle></CardHeader>
-                    <CardContent><p>El "cómo" hacer algo. El conocimiento puesto en acción.</p><p className="mt-2 font-semibold text-sm">Ej: Técnicas, métodos, algoritmos, habilidades.</p></CardContent>
+                    {/* 👇 CORRECCIÓN 1: Se reemplazó "..." por &quot;...&quot; */}
+                    <CardContent><p>El &quot;cómo&quot; hacer algo. El conocimiento puesto en acción.</p><p className="mt-2 font-semibold text-sm">Ej: Técnicas, métodos, algoritmos, habilidades.</p></CardContent>
                 </Card>
                 <Card className="bg-background transition-transform duration-200 hover:-translate-y-2">
                     <CardHeader><CardTitle className="text-primary">D. Metacognitivo</CardTitle></CardHeader>
-                    <CardContent><p>La conciencia sobre el propio proceso de aprendizaje. "Pensar sobre cómo piensas".</p><p className="mt-2 font-semibold text-sm">Ej: Estrategias de aprendizaje, autoconocimiento.</p></CardContent>
+                    {/* 👇 CORRECCIÓN 2: Se reemplazó "..." por &quot;...&quot; */}
+                    <CardContent><p>La conciencia sobre el propio proceso de aprendizaje. &quot;Pensar sobre cómo piensas&quot;.</p><p className="mt-2 font-semibold text-sm">Ej: Estrategias de aprendizaje, autoconocimiento.</p></CardContent>
                 </Card>
             </div>
         </section>
