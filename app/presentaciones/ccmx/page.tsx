@@ -1,4 +1,4 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 7
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,13 +62,14 @@ export default function PresentationPage() {
         </section>
 
         {/* ======================================================================= */}
-        {/* PANTALLA 7: LA VISIÓN ESTRATÉGICA (LA MATRIZ) (NUEVA)                   */}
+        {/* PANTALLA 7: LA VISIÓN ESTRATÉGICA (LA MATRIZ)                           */}
         {/* ======================================================================= */}
         <section id="competency-matrix" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
           <div className="text-center mb-10">
               <h2 className="text-3xl md:text-5xl font-bold">
                   La Visión Estratégica: Matriz de Competencias
               </h2>
+              {/* 👇 CORRECCIÓN 1: Se reemplazaron las comillas simples */}
               <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
                   Este es nuestro &apos;cuadro de mando&apos;. Cruzamos los <span className="font-semibold text-foreground">Dominios Temáticos</span> con los <span className="font-semibold text-foreground">Niveles Cognitivos</span> para obtener una vista panorámica de todo el banco de preguntas.
               </p>
@@ -98,9 +99,10 @@ export default function PresentationPage() {
             </CardContent>
           </Card>
           
+          {/* 👇 CORRECCIÓN 2: Se reemplazaron las comillas simples en esta sección */}
           <div className="mt-8 w-full max-w-4xl grid md:grid-cols-2 gap-4 text-left">
               <div><h3 className="font-semibold">🎯 Herramienta de Diagnóstico</h3><p className="text-sm text-muted-foreground">La matriz revela instantáneamente los &apos;puntos ciegos cognitivos&apos;. Una celda con Total: 0, como la resaltada, indica una carencia total de preguntas para ese nivel.</p></div>
-              <div><h3 className="font-semibold">⚖️ Análisis de Equilibrio</h3><p className="text-sm text-muted-foreground">Permite ver si hay una sobreconcentración en preguntas de memorización ('Recordar') y una escasez en preguntas de pensamiento crítico ('Evaluar' y 'Crear').</p></div>
+              <div><h3 className="font-semibold">⚖️ Análisis de Equilibrio</h3><p className="text-sm text-muted-foreground">Permite ver si hay una sobreconcentración en preguntas de memorización (&apos;Recordar&apos;) y una escasez en preguntas de pensamiento crítico (&apos;Evaluar&apos; y &apos;Crear&apos;).</p></div>
           </div>
         </section>
 
