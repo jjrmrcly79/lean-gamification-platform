@@ -1,9 +1,9 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 6
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CON PANTALLA 7
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Importamos el componente Tabs
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 
 export default function PresentationPage() {
@@ -16,7 +16,7 @@ export default function PresentationPage() {
       </header>
 
       <main className="flex flex-col">
-        {/* --- PANTALLA 1-4 (EXISTENTES) --- */}
+        {/* --- PANTALLAS 1-6 (EXISTENTES) --- */}
         <section className="flex flex-col items-center justify-center text-center p-4 min-h-screen bg-background">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">No Creamos Índices, Construimos<br /><span className="text-primary">Arquitecturas del Conocimiento</span></h1>
           <p className="mt-6 max-w-2xl text-lg md:text-xl text-muted-foreground">Un temario tradicional te dice <span className="font-semibold text-foreground">qué</span> aprender. Una arquitectura del conocimiento te muestra <span className="font-semibold text-foreground">cómo se conectan las ideas</span>.</p>
@@ -52,61 +52,56 @@ export default function PresentationPage() {
         <section id="tagging-system" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
           <div className="text-center mb-10"><h2 className="text-3xl md:text-5xl font-bold">Nuestro Motor: Cada Pregunta es un Dato Inteligente</h2><p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">Así es como aplicamos la teoría. Cada pregunta en nuestro sistema recibe 3 etiquetas clave que la convierten en una pieza analizable.</p></div>
           <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-            <div className="flex flex-col items-center justify-center p-6"><Card className="w-full max-w-sm shadow-lg"><CardHeader><CardTitle>Pregunta Ejemplo</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">&quot;Compare el sistema JIT con el modelo EOQ, analizando las diferencias en sus supuestos...&quot;</p></CardContent></Card><div className="text-2xl my-4">👇</div><div className="flex flex-wrap justify-center gap-3"><Badge variant="secondary">Dominio: Cadena de Suministro</Badge><Badge variant="secondary">Conocimiento: Conceptual</Badge><Badge variant="destructive">Nivel: Analizar</Badge></div></div>
-            <div className="flex flex-col gap-4"><Card><CardHeader><CardTitle>1. Dominio Temático</CardTitle><CardContent className="pt-4"><p>Es el área de contenido principal. Nos dice <span className="font-semibold text-primary">&apos;de qué&apos;</span> trata la pregunta.</p><p className="text-sm text-muted-foreground mt-2">Ej: Gestión Financiera, Liderazgo, etc.</p></CardContent></CardHeader></Card><Card><CardHeader><CardTitle>2. Tipo de Conocimiento</CardTitle><CardContent className="pt-4"><p>Clasifica la naturaleza del saber evaluado. Nos dice <span className="font-semibold text-primary">&apos;qué clase&apos;</span> de información es.</p><p className="text-sm text-muted-foreground mt-2">Fáctico, Conceptual, Procedimental o Metacognitivo.</p></CardContent></CardHeader></Card><Card><CardHeader><CardTitle>3. Nivel Cognitivo</CardTitle><CardContent className="pt-4"><p>Define la habilidad mental requerida. Nos dice <span className="font-semibold text-primary">&apos;cómo pensar&apos;</span> para responder.</p><p className="text-sm text-muted-foreground mt-2">Recordar, Aplicar, Analizar, Crear, etc.</p></CardContent></CardHeader></Card></div>
+            <div className="flex flex-col items-center justify-center p-6"><Card className="w-full max-w-sm shadow-lg"><CardHeader><CardTitle>Pregunta Ejemplo</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">&quot;Compare el sistema JIT con el modelo EOQ...&quot;</p></CardContent></Card><div className="text-2xl my-4">👇</div><div className="flex flex-wrap justify-center gap-3"><Badge variant="secondary">Dominio: Cadena de Suministro</Badge><Badge variant="secondary">Conocimiento: Conceptual</Badge><Badge variant="destructive">Nivel: Analizar</Badge></div></div>
+            <div className="flex flex-col gap-4"><Card><CardHeader><CardTitle>1. Dominio Temático</CardTitle><CardContent className="pt-4"><p>Es el área de contenido principal. Nos dice <span className="font-semibold text-primary">&apos;de qué&apos;</span> trata la pregunta.</p></CardContent></CardHeader></Card><Card><CardHeader><CardTitle>2. Tipo de Conocimiento</CardTitle><CardContent className="pt-4"><p>Clasifica la naturaleza del saber evaluado. Nos dice <span className="font-semibold text-primary">&apos;qué clase&apos;</span> de información es.</p></CardContent></CardHeader></Card><Card><CardHeader><CardTitle>3. Nivel Cognitivo</CardTitle><CardContent className="pt-4"><p>Define la habilidad mental requerida. Nos dice <span className="font-semibold text-primary">&apos;cómo pensar&apos;</span> para responder.</p></CardContent></CardHeader></Card></div>
           </div>
+        </section>
+        <section id="interactive-example" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
+            <div className="text-center mb-10"><h2 className="text-3xl md:text-5xl font-bold">La Magia en Acción: El Viaje de un Concepto</h2><p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">Explora cómo un único concepto, la gestión de inventarios <span className="font-semibold text-foreground">Just-In-Time (JIT)</span>, se evalúa en todos los niveles de profundidad cognitiva.</p></div>
+            <Tabs defaultValue="recordar" className="w-full max-w-2xl"><TabsList className="grid w-full grid-cols-3 sm:grid-cols-6"><TabsTrigger value="recordar">Recordar</TabsTrigger><TabsTrigger value="comprender">Comprender</TabsTrigger><TabsTrigger value="aplicar">Aplicar</TabsTrigger><TabsTrigger value="analizar">Analizar</TabsTrigger><TabsTrigger value="evaluar">Evaluar</TabsTrigger><TabsTrigger value="crear">Crear</TabsTrigger></TabsList><Card className="mt-4 bg-background"><CardContent className="p-6 min-h-[200px]"><TabsContent value="recordar"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 1:</p><p className="text-lg font-medium mt-2">&quot;Defina el concepto de gestión de inventarios Just-In-Time (JIT).&quot;</p></TabsContent><TabsContent value="comprender"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 2:</p><p className="text-lg font-medium mt-2">&quot;Explique con sus propias palabras dos ventajas y dos desventajas de implementar un sistema JIT en una empresa manufacturera.&quot;</p></TabsContent><TabsContent value="aplicar"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 3:</p><p className="text-lg font-medium mt-2">&quot;Una empresa tiene un costo de almacenamiento de 50 € por unidad/mes. Al implementar JIT, reduce su inventario de 1,000 a 150 unidades. ¿Cuál es el ahorro mensual?&quot;</p></TabsContent><TabsContent value="analizar"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 4:</p><p className="text-lg font-medium mt-2">&quot;Compare el sistema JIT con el modelo de Cantidad Económica de Pedido (EOQ), analizando las diferencias en sus supuestos y aplicabilidad.&quot;</p></TabsContent><TabsContent value="evaluar"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 5:</p><p className="text-lg font-medium mt-2">&quot;Argumente a favor o en contra: &apos;La volatilidad de las cadenas de suministro globales ha hecho que el modelo JIT sea obsoleto y demasiado arriesgado&apos;. Justifique su postura.&quot;</p></TabsContent><TabsContent value="crear"><p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 6:</p><p className="text-lg font-medium mt-2">&quot;Diseñe un plan de implementación de un sistema JIT híbrido para una pequeña empresa de comercio electrónico, incluyendo los KPIs para medir el éxito.&quot;</p></TabsContent></CardContent></Card></Tabs>
         </section>
 
         {/* ======================================================================= */}
-        {/* PANTALLA 6: LA MAGIA EN ACCIÓN (EJEMPLO INTERACTIVO) (NUEVA)            */}
+        {/* PANTALLA 7: LA VISIÓN ESTRATÉGICA (LA MATRIZ) (NUEVA)                   */}
         {/* ======================================================================= */}
-        <section id="interactive-example" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
-            <div className="text-center mb-10">
-                <h2 className="text-3xl md:text-5xl font-bold">La Magia en Acción: El Viaje de un Concepto</h2>
-                <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
-                    Explora cómo un único concepto, la gestión de inventarios <span className="font-semibold text-foreground">Just-In-Time (JIT)</span>, se evalúa en todos los niveles de profundidad cognitiva.
-                </p>
-            </div>
+        <section id="competency-matrix" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-background">
+          <div className="text-center mb-10">
+              <h2 className="text-3xl md:text-5xl font-bold">
+                  La Visión Estratégica: Matriz de Competencias
+              </h2>
+              <p className="mt-4 max-w-3xl mx-auto text-lg text-muted-foreground">
+                  Este es nuestro &apos;cuadro de mando&apos;. Cruzamos los <span className="font-semibold text-foreground">Dominios Temáticos</span> con los <span className="font-semibold text-foreground">Niveles Cognitivos</span> para obtener una vista panorámica de todo el banco de preguntas.
+              </p>
+          </div>
 
-            <Tabs defaultValue="recordar" className="w-full max-w-2xl">
-                <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
-                    <TabsTrigger value="recordar">Recordar</TabsTrigger>
-                    <TabsTrigger value="comprender">Comprender</TabsTrigger>
-                    <TabsTrigger value="aplicar">Aplicar</TabsTrigger>
-                    <TabsTrigger value="analizar">Analizar</TabsTrigger>
-                    <TabsTrigger value="evaluar">Evaluar</TabsTrigger>
-                    <TabsTrigger value="crear">Crear</TabsTrigger>
-                </TabsList>
-                
-                <Card className="mt-4 bg-background">
-                  <CardContent className="p-6 min-h-[200px]">
-                    <TabsContent value="recordar">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 1:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Defina el concepto de gestión de inventarios Just-In-Time (JIT).&quot;</p>
-                    </TabsContent>
-                    <TabsContent value="comprender">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 2:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Explique con sus propias palabras dos ventajas y dos desventajas de implementar un sistema JIT en una empresa manufacturera.&quot;</p>
-                    </TabsContent>
-                    <TabsContent value="aplicar">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 3:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Una empresa tiene un costo de almacenamiento de 50 € por unidad/mes. Al implementar JIT, reduce su inventario de 1,000 a 150 unidades. ¿Cuál es el ahorro mensual?&quot;</p>
-                    </TabsContent>
-                    <TabsContent value="analizar">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 4:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Compare el sistema JIT con el modelo de Cantidad Económica de Pedido (EOQ), analizando las diferencias en sus supuestos y aplicabilidad.&quot;</p>
-                    </TabsContent>
-                    <TabsContent value="evaluar">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 5:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Argumente a favor o en contra: &apos;La volatilidad de las cadenas de suministro globales ha hecho que el modelo JIT sea obsoleto y demasiado arriesgado&apos;. Justifique su postura.&quot;</p>
-                    </TabsContent>
-                    <TabsContent value="crear">
-                        <p className="text-sm text-muted-foreground">PREGUNTA DE NIVEL 6:</p>
-                        <p className="text-lg font-medium mt-2">&quot;Diseñe un plan de implementación de un sistema JIT híbrido para una pequeña empresa de comercio electrónico, incluyendo los KPIs para medir el éxito.&quot;</p>
-                    </TabsContent>
-                  </CardContent>
-                </Card>
-            </Tabs>
+          <Card className="w-full max-w-4xl overflow-x-auto">
+            <CardContent className="p-4">
+              <table className="w-full text-sm text-left">
+                <thead className="border-b">
+                  <tr>
+                    <th className="p-2 font-semibold">Nivel Cognitivo</th>
+                    <th className="p-2 font-semibold text-center">Dominio A: Finanzas</th>
+                    <th className="p-2 font-semibold text-center">Dominio B: Operaciones</th>
+                    <th className="p-2 font-semibold text-center">Dominio C: Liderazgo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b"><td className="p-2 font-semibold">6. Crear</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 2<br />(C:1, P:1)</span></td><td className="p-2 text-center bg-red-100 dark:bg-red-900/30"><span className="font-mono text-xs font-bold text-destructive">Total: 0</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 1<br />(P:1)</span></td></tr>
+                  <tr className="border-b"><td className="p-2 font-semibold">5. Evaluar</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 8<br />(F:1, C:5, P:2)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 5<br />(C:4, P:1)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 7<br />(F:2, C:5)</span></td></tr>
+                  <tr className="border-b"><td className="p-2 font-semibold">4. Analizar</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 15<br />(F:4, C:8, P:3)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 12<br />(F:3, C:7, P:2)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 11<br />(F:3, C:6, P:2)</span></td></tr>
+                  <tr className="border-b"><td className="p-2 font-semibold">3. Aplicar</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 25<br />(F:8, C:7, P:10)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 18<br />(F:5, C:5, P:8)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 22<br />(F:7, C:6, P:9)</span></td></tr>
+                  <tr className="border-b"><td className="p-2 font-semibold">2. Comprender</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 40<br />(F:20, C:18, P:2)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 35<br />(F:18, C:15, P:2)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 38<br />(F:19, C:17, P:2)</span></td></tr>
+                  <tr><td className="p-2 font-semibold">1. Recordar</td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 50<br />(F:35, C:15)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 45<br />(F:30, C:15)</span></td><td className="p-2 text-center"><span className="font-mono text-xs">Total: 48<br />(F:32, C:16)</span></td></tr>
+                </tbody>
+              </table>
+              <p className="mt-4 text-xs text-muted-foreground">Nota: F (Fáctico), C (Conceptual), P (Procedimental).</p>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-8 w-full max-w-4xl grid md:grid-cols-2 gap-4 text-left">
+              <div><h3 className="font-semibold">🎯 Herramienta de Diagnóstico</h3><p className="text-sm text-muted-foreground">La matriz revela instantáneamente los &apos;puntos ciegos cognitivos&apos;. Una celda con Total: 0, como la resaltada, indica una carencia total de preguntas para ese nivel.</p></div>
+              <div><h3 className="font-semibold">⚖️ Análisis de Equilibrio</h3><p className="text-sm text-muted-foreground">Permite ver si hay una sobreconcentración en preguntas de memorización ('Recordar') y una escasez en preguntas de pensamiento crítico ('Evaluar' y 'Crear').</p></div>
+          </div>
         </section>
 
       </main>
