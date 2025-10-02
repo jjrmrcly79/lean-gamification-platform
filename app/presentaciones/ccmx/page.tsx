@@ -1,10 +1,39 @@
 // app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
+'use client'; // <-- MUY IMPORTANTE: Añadir esta línea al principio
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import Image from 'next/image';
+import { Bar, BarChart, CartesianGrid, Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
+// --- DATOS DE EJEMPLO PARA LOS GRÁFICOS ---
+const radarChartData = [
+  { subject: "Recordar", "Operaciones": 85, "Finanzas": 60, "Liderazgo": 75 },
+  { subject: "Comprender", "Operaciones": 90, "Finanzas": 70, "Liderazgo": 80 },
+  { subject: "Aplicar", "Operaciones": 95, "Finanzas": 85, "Liderazgo": 70 },
+  { subject: "Analizar", "Operaciones": 70, "Finanzas": 90, "Liderazgo": 85 },
+  { subject: "Evaluar", "Operaciones": 60, "Finanzas": 95, "Liderazgo": 90 },
+  { subject: "Crear", "Operaciones": 50, "Finanzas": 75, "Liderazgo": 88 },
+];
+
+const barChartData = [
+  { name: 'Básico', 'Personal': 4 },
+  { name: 'Intermedio', 'Personal': 12 },
+  { name: 'Avanzado', 'Personal': 8 },
+  { name: 'Experto', 'Personal': 2 },
+];
+
+const tableData = [
+    { name: 'Ana Torres', level: 'Avanzado', progress: 85 },
+    { name: 'Carlos López', level: 'Intermedio', progress: 60 },
+    { name: 'Sofía Martin', level: 'Experto', progress: 95 },
+    { name: 'David García', level: 'Intermedio', progress: 72 },
+    { name: 'Elena Ruiz', level: 'Básico', progress: 40 },
+];
 
 export default function PresentationPage() {
   return (
@@ -105,8 +134,93 @@ export default function PresentationPage() {
               <div><h3 className="font-semibold">⚖️ Análisis de Equilibrio</h3><p className="text-sm text-muted-foreground">Permite ver si hay una sobreconcentración en preguntas de memorización (&apos;Recordar&apos;) y una escasez en preguntas de pensamiento crítico (&apos;Evaluar&apos; y &apos;Crear&apos;).</p></div>
           </div>
         </section>
+    {/* ======================================================================= */}
+        {/* PANTALLA 8: EL DASHBOARD DE RESULTADOS (NUEVA)                          */}
+        {/* ======================================================================= */}
+        <section id="dashboard" className="flex flex-col items-center justify-center p-4 md:p-8 min-h-screen bg-secondary">
+            <div className="text-center mb-10 max-w-4xl">
+                <h2 className="text-3xl md:text-5xl font-bold">El Valor Real: Un Dashboard para la Toma de Decisiones</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                    Toda la arquitectura se traduce en datos accionables. Visualiza la salud de tu organización, detecta brechas de talento y planifica el desarrollo de competencias a todos los niveles.
+                </p>
+            </div>
 
+            <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* --- GRÁFICO DE RADAR --- */}
+                <Card className="col-span-1 lg:col-span-1 bg-background">
+                    <CardHeader>
+                        <CardTitle>Vista Organizacional por Competencia</CardTitle>
+                        <CardDescription>Comparativo entre departamentos clave.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <RadarChart data={radarChartData}>
+                                <PolarGrid />
+                                <PolarAngleAxis dataKey="subject" />
+                                <Tooltip />
+                                <Legend />
+                                <Radar name="Operaciones" dataKey="Operaciones" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                                <Radar name="Finanzas" dataKey="Finanzas" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                                <Radar name="Liderazgo" dataKey="Liderazgo" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* --- GRÁFICO DE BARRAS --- */}
+                <Card className="col-span-1 lg:col-span-1 bg-background">
+                    <CardHeader>
+                        <CardTitle>Drill-Down: Departamento de Operaciones</CardTitle>
+                        <CardDescription>Distribución del personal por nivel de dominio.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={barChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="Personal" fill="#8884d8" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* --- TABLA DE DETALLE --- */}
+                <Card className="col-span-1 lg:col-span-2 bg-background">
+                    <CardHeader>
+                        <CardTitle>Detalle del Personal - Operaciones</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nombre</TableHead>
+                                    <TableHead>Nivel General</TableHead>
+                                    <TableHead className="text-right">Progreso de Desarrollo</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tableData.map((person) => (
+                                    <TableRow key={person.name}>
+                                        <TableCell className="font-medium">{person.name}</TableCell>
+                                        <TableCell>{person.level}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span>{person.progress}%</span>
+                                                <Progress value={person.progress} className="w-[100px]" />
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </section>
       </main>
     </div>
   );
 }
+      
