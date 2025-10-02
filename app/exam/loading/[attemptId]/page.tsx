@@ -41,7 +41,8 @@ export default function LoadingExamPage() {
   const [userName, setUserName] = useState('participante');
 
   // Estado de animación (se carga desde /public por fetch)
-  const [animationData, setAnimationData] = useState<any>(null);
+  type AnimationJSON = Record<string, unknown>;
+  const [animationData, setAnimationData] = useState<AnimationJSON | null>(null);
   const [isAnimationVisible, setIsAnimationVisible] = useState(false);
 
   // Estado de página
@@ -111,7 +112,7 @@ export default function LoadingExamPage() {
           {/* Solo renderiza Lottie cuando está visible y ya cargó el JSON */}
           {isAnimationVisible && animationData ? (
             <Lottie
-              animationData={animationData}
+              animationData={animationData as object}
               loop
               autoplay
               style={{ width: 250, height: 250 }}
