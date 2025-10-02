@@ -1,4 +1,4 @@
-// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
+// app/presentaciones/ccmx/page.tsx - VERSIÓN ACTUALIZADA
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,8 +19,9 @@ export default function PresentationPage() {
           Un temario tradicional te dice <span className="font-semibold text-foreground">qué</span> aprender. Una arquitectura del conocimiento te muestra <span className="font-semibold text-foreground">cómo se conectan las ideas</span>.
         </p>
         <div className="mt-8">
-          <Button size="lg">
-            Descubre Cómo Funciona
+          {/* 👇 CAMBIO 1: El botón ahora es un enlace que apunta al id 'framework' */}
+          <Button size="lg" asChild>
+            <a href="#framework">Descubre Cómo Funciona</a>
           </Button>
         </div>
       </section>
@@ -28,7 +29,8 @@ export default function PresentationPage() {
       {/* ======================================================================= */}
       {/* PANTALLA 2: LA BASE (FRAMEWORK VALIDADO)                                */}
       {/* ======================================================================= */}
-      <section className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
+      {/* 👇 CAMBIO 2: Añadimos un id a la sección para que el botón pueda encontrarla */}
+      <section id="framework" className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
         <div className="text-center">
             <h2 className="text-3xl md:text-5xl font-bold">
                 Midiendo el Conocimiento con Rigor Científico
@@ -45,12 +47,16 @@ export default function PresentationPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
-                        El conocimiento se veía como una simple escalera que había que subir paso a paso. Limitado y unidimensional.
+                        El modelo original de Bloom organizaba el conocimiento en 6 niveles secuenciales.
                     </p>
-                    <ul className="mt-4 space-y-2 text-left">
-                        <li>1. Conocer</li>
-                        <li>2. Comprender</li>
-                        <li>3. Aplicar... etc.</li>
+                    {/* 👇 CAMBIO 3: Lista completada */}
+                    <ul className="mt-4 space-y-2 text-left font-medium">
+                        <li>1. Conocimiento</li>
+                        <li>2. Comprensión</li>
+                        <li>3. Aplicación</li>
+                        <li>4. Análisis</li>
+                        <li>5. Síntesis</li>
+                        <li>6. Evaluación</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -61,13 +67,17 @@ export default function PresentationPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-muted-foreground">
-                        Separamos <span className="font-semibold text-primary">cómo piensas</span> de <span className="font-semibold text-primary">sobre qué piensas</span>, permitiendo una evaluación mucho más rica y precisa.
+                        El modelo revisado usa verbos de acción y separa el <span className="font-semibold text-primary">proceso</span> del <span className="font-semibold text-primary">conocimiento</span>.
                     </p>
-                    <div className="mt-4 text-left">
-                        {/* 👇 AQUÍ ESTÁ LA CORRECCIÓN: ' fue reemplazado por &apos; */}
-                        <p><strong>Dimensión 1:</strong> Proceso Cognitivo (Los &apos;escalones&apos;)</p>
-                        <p><strong>Dimensión 2:</strong> Tipo de Conocimiento (Fáctico, Conceptual...)</p>
-                    </div>
+                    {/* 👇 CAMBIO 4: Lista completada y paralela */}
+                    <ul className="mt-4 space-y-2 text-left font-medium">
+                        <li>1. Recordar</li>
+                        <li>2. Comprender</li>
+                        <li>3. Aplicar</li>
+                        <li>4. Analizar</li>
+                        <li>5. Evaluar</li>
+                        <li className="text-primary">6. Crear</li>
+                    </ul>
                 </CardContent>
             </Card>
         </div>

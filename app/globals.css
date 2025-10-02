@@ -113,6 +113,9 @@
 }
 
 @layer base {
+  html {
+    @apply scroll-smooth; /* <-- AÑADE ESTA LÍNEA */
+  }
   * {
     @apply border-border outline-ring/50;
   }
