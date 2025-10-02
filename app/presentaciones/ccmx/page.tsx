@@ -1,4 +1,4 @@
-// app/presentaciones/ccmx/page.tsx
+// app/presentaciones/ccmx/page.tsx - CORREGIDO
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,10 +26,8 @@ export default function PresentationPage() {
       </section>
 
       {/* ======================================================================= */}
-      {/* PANTALLA 2: LA BASE (FRAMEWORK VALIDADO) - NUEVA SECCIÓN                 */}
+      {/* PANTALLA 2: LA BASE (FRAMEWORK VALIDADO)                                */}
       {/* ======================================================================= */}
-      {/* He usado un color de fondo 'bg-secondary' de tu tema para crear un      */}
-      {/* contraste visual entre las secciones y hacer la transición más clara.  */}
       <section className="flex flex-col items-center justify-center p-8 md:p-12 min-h-screen bg-secondary">
         <div className="text-center">
             <h2 className="text-3xl md:text-5xl font-bold">
@@ -39,10 +37,8 @@ export default function PresentationPage() {
                 Usamos la taxonomía de Anderson & Krathwohl (revisión de Bloom), el estándar de oro en diseño educativo. La clave es su <span className="font-semibold text-foreground">matriz bidimensional</span>.
             </p>
         </div>
-
-        {/* Contenedor para la comparación visual */}
+        
         <div className="mt-10 grid md:grid-cols-2 gap-8 w-full max-w-4xl">
-            {/* Columna 1: El modelo antiguo */}
             <Card className="bg-background">
                 <CardHeader>
                     <CardTitle>Antes: La Escalera Lineal</CardTitle>
@@ -59,7 +55,6 @@ export default function PresentationPage() {
                 </CardContent>
             </Card>
 
-            {/* Columna 2: Nuestro modelo */}
             <Card className="border-primary border-2">
                 <CardHeader>
                     <CardTitle>Ahora: La Matriz Dinámica</CardTitle>
@@ -69,14 +64,14 @@ export default function PresentationPage() {
                         Separamos <span className="font-semibold text-primary">cómo piensas</span> de <span className="font-semibold text-primary">sobre qué piensas</span>, permitiendo una evaluación mucho más rica y precisa.
                     </p>
                     <div className="mt-4 text-left">
-                        <p><strong>Dimensión 1:</strong> Proceso Cognitivo (Los "escalones")</p>
+                        {/* 👇 AQUÍ ESTÁ EL CAMBIO PRINCIPAL */}
+                        <p><strong>Dimensión 1:</strong> Proceso Cognitivo (Los 'escalones')</p>
                         <p><strong>Dimensión 2:</strong> Tipo de Conocimiento (Fáctico, Conceptual...)</p>
                     </div>
                 </CardContent>
             </Card>
         </div>
       </section>
-
     </main>
   );
 }
