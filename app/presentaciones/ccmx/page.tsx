@@ -1,4 +1,4 @@
-// app/presentaciones/ccmx/page.tsx - CORREGIDO
+// app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,8 +64,8 @@ export default function PresentationPage() {
                         Separamos <span className="font-semibold text-primary">cómo piensas</span> de <span className="font-semibold text-primary">sobre qué piensas</span>, permitiendo una evaluación mucho más rica y precisa.
                     </p>
                     <div className="mt-4 text-left">
-                        {/* 👇 AQUÍ ESTÁ EL CAMBIO PRINCIPAL */}
-                        <p><strong>Dimensión 1:</strong> Proceso Cognitivo (Los 'escalones')</p>
+                        {/* 👇 AQUÍ ESTÁ LA CORRECCIÓN: ' fue reemplazado por &apos; */}
+                        <p><strong>Dimensión 1:</strong> Proceso Cognitivo (Los &apos;escalones&apos;)</p>
                         <p><strong>Dimensión 2:</strong> Tipo de Conocimiento (Fáctico, Conceptual...)</p>
                     </div>
                 </CardContent>
