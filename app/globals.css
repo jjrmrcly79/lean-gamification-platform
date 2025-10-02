@@ -123,3 +123,46 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Estilos para la sección interactiva de "escalones" */
+.stair-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* 8px */
+  width: 100%;
+  max-width: 48rem; /* 768px */
+}
+
+.stair-step {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem; /* 16px 24px */
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.stair-step:hover {
+  border-color: var(--primary);
+  background-color: hsl(var(--card) / 0.5);
+}
+
+.stair-title {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+}
+
+.stair-description {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.3s ease-in-out;
+  color: var(--muted-foreground);
+}
+
+.stair-step:hover .stair-description {
+  max-height: 100px; /* Altura suficiente para mostrar el contenido */
+  opacity: 1;
+  margin-top: 0.75rem; /* 12px */
+}
