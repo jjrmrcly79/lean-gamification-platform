@@ -15,6 +15,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
+const [pollResults, setPollResults] = useState<Record<string, { correct: number; incorrect: number }>>({});
+
+interface Slide {
+  id: string;
+  title: string;
+  content: React.ReactNode;
+  // 👇 METADATOS AÑADIDOS
+  cognitiveLevel?: 'Recordar' | 'Comprender' | 'Aplicar' | 'Analizar'; // Usamos los más relevantes para una presentación
+  knowledgeType?: 'Fáctico' | 'Conceptual' | 'Procedimental';
+}
 
 // ---------- Tipos Realtime (sin any) ----------
 type NavPayload = { i: number };
@@ -33,7 +43,12 @@ interface Slide {
   title: string;
   content: React.ReactNode;
 }
-
+// Define el tipo para los votos del sondeo
+type PollPayload = {
+  slideId: string;
+  choiceIndex: number;
+  isCorrect: boolean;
+};
 // =================================================
 // Componente principal
 // =================================================
@@ -73,6 +88,7 @@ export default function CcmxHoshinPresentation() {
   const pct = ((index + 1) / slides.length) * 100;
 
   // ===== Realtime: suscripción (recibir eventos) =====
+  // ===== Realtime: suscripción (recibir eventos) =====
   useEffect(() => {
     const channel = supabase.channel(`ccmx_room_${roomId}`);
 
@@ -104,7 +120,27 @@ export default function CcmxHoshinPresentation() {
       }
     );
 
+    // 👇 BLOQUE CORREGIDO
+    channel.on(
+      "broadcast",
+      { event: "poll_vote" },
+      (env: BroadcastEnvelope<PollPayload>) => {
+        const vote = env.payload;
+        setPollResults((prev) => {
+          const current = prev[vote.slideId] || { correct: 0, incorrect: 0 };
+          return {
+            ...prev,
+            [vote.slideId]: {
+              correct: current.correct + (vote.isCorrect ? 1 : 0),
+              incorrect: current.incorrect + (vote.isCorrect ? 0 : 1),
+            },
+          };
+        });
+      }
+    );
+
     channel.subscribe();
+    
     return () => {
       supabase.removeChannel(channel);
     };
@@ -231,14 +267,16 @@ export default function CcmxHoshinPresentation() {
 
             {/* Panel lateral (desktop) */}
             <aside className="border-l p-3 hidden md:block">
-              {!isAudience ? (
+            {!isAudience ? (
                 <PresenterPanel
-                  roomId={roomId}
-                  joinUrl={joinUrl}
-                  wall={wall}
-                  setIndex={setIndex}
-                  slides={slides}
-                />
+                roomId={roomId}
+                joinUrl={joinUrl}
+                wall={wall}
+                setIndex={setIndex}
+                slides={slides}
+                index={index} // <-- AÑADIDO
+                pollResults={pollResults} // <-- AÑADIDO
+            />
               ) : (
                 <AudiencePanel
                   roomId={roomId}
@@ -301,17 +339,19 @@ export default function CcmxHoshinPresentation() {
               onClick={() => setShowPanel(false)}
             >
               <div
-                className="absolute bottom-0 left-0 right-0 h-[70vh] bg-background border-t p-3 rounded-t-2xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {!isAudience ? (
-                  <PresenterPanel
-                    roomId={roomId}
-                    joinUrl={joinUrl}
-                    wall={wall}
-                    setIndex={setIndex}
-                    slides={slides}
-                  />
+            className="absolute bottom-0 left-0 right-0 h-[70vh] bg-background border-t p-3 rounded-t-2xl"
+            onClick={(e) => e.stopPropagation()}
+            >
+            {!isAudience ? (
+                <PresenterPanel
+                roomId={roomId}
+                joinUrl={joinUrl}
+                wall={wall}
+                setIndex={setIndex}
+                slides={slides}
+                index={index} // <-- AÑADIDO
+                pollResults={pollResults} // <-- AÑADIDO
+                />
                 ) : (
                   <AudiencePanel
                     roomId={roomId}
@@ -328,7 +368,36 @@ export default function CcmxHoshinPresentation() {
     </div>
   );
 }
+// Componente para la gráfica de resultados
+function PollResultsGraph({ results }: { results?: { correct: number; incorrect: number } }) {
+  if (!results) {
+    return <div className="text-xs text-muted-foreground">Esperando respuestas...</div>;
+  }
 
+  const total = results.correct + results.incorrect;
+  const correctPct = total === 0 ? 0 : (results.correct / total) * 100;
+  const incorrectPct = total === 0 ? 0 : (results.incorrect / total) * 100;
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="w-[80px]">Correctas</span>
+        <div className="w-full bg-muted rounded-full h-4">
+          <div className="bg-green-500 h-4 rounded-full" style={{ width: `${correctPct}%` }}></div>
+        </div>
+        <span className="w-[40px] text-right">{results.correct}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-[80px]">Incorrectas</span>
+        <div className="w-full bg-muted rounded-full h-4">
+          <div className="bg-destructive h-4 rounded-full" style={{ width: `${incorrectPct}%` }}></div>
+        </div>
+        <span className="w-[40px] text-right">{results.incorrect}</span>
+      </div>
+      <div className="text-xs text-muted-foreground text-right">Total de respuestas: {total}</div>
+    </div>
+  );
+}
 // =================================================
 // Panel del presentador
 // =================================================
@@ -338,15 +407,25 @@ function PresenterPanel({
   wall,
   setIndex,
   slides,
+  index,
+  pollResults,
 }: {
   roomId: string;
   joinUrl: string;
   wall: Array<NotePayload>;
   setIndex: React.Dispatch<React.SetStateAction<number>>;
   slides: Slide[];
+  index: number;
+  pollResults: Record<string, { correct: number; incorrect: number }>;
 }) {
+  // 👇 CORRECCIÓN 1: Simplificamos la lógica. 
+  // La mejor forma de saber si mostrar resultados es ver si existen para la slide actual.
+  const currentSlideId = slides[index]?.id;
+  const currentResults = pollResults[currentSlideId];
+
   return (
     <div className="space-y-3">
+      {/* --- Card de QR y Sala (sin cambios) --- */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Audiencia: únanse con QR</CardTitle>
@@ -370,6 +449,7 @@ function PresenterPanel({
         </CardContent>
       </Card>
 
+      {/* --- Card de Navegación (sin cambios) --- */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Ir a slide</CardTitle>
@@ -390,6 +470,20 @@ function PresenterPanel({
         </CardContent>
       </Card>
 
+      {/* 👇 CORRECCIÓN 2: Renderizado Condicional del Card de Resultados */}
+      {/* Este bloque solo aparecerá si 'currentResults' tiene datos para la slide activa. */}
+      {currentResults && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Resultados del Sondeo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PollResultsGraph results={currentResults} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* --- Card del Muro (sin cambios) --- */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Muro (mensajes entrantes)</CardTitle>
@@ -415,6 +509,7 @@ function PresenterPanel({
           </ScrollArea>
         </CardContent>
       </Card>
+
     </div>
   );
 }
@@ -641,33 +736,29 @@ function buildSlides(logoSrc: string): Slide[] {
         </Card>
       ),
     },
-    {
-      id: "jerarquia",
-      title: "Jerarquía estratégica",
-      content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Jerarquía estratégica</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-2">
-              <li>
-                <strong>Corporativa</strong> → ADN estratégico (visión, misión, expectativas).
-              </li>
-              <li>
-                <strong>Negocio</strong> → estrategias e indicadores por unidad.
-              </li>
-              <li>
-                <strong>Funcional</strong> → áreas habilitan metas de negocio.
-              </li>
-              <li>
-                <strong>Operativa</strong> → operación diaria y core.
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      ),
-    },
+            {
+        id: "jerarquia",
+        title: "Jerarquía estratégica",
+        // highlight-start
+        cognitiveLevel: "Recordar", // Se pide recordar una lista de conceptos
+        knowledgeType: "Conceptual", // La jerarquía es un modelo/concepto
+        // highlight-end
+        content: (
+            <Card>
+            <CardHeader>
+                <CardTitle>Jerarquía estratégica</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Corporativa</strong> → ADN estratégico...</li>
+                <li><strong>Negocio</strong> → estrategias e indicadores...</li>
+                <li><strong>Funcional</strong> → áreas habilitan metas...</li>
+                <li><strong>Operativa</strong> → operación diaria...</li>
+                </ul>
+            </CardContent>
+            </Card>
+        ),
+        },
     {
       id: "modelos",
       title: "Modelos: Cascade / Hoshin / OKR",
@@ -1014,4 +1105,104 @@ function Box({
       </div>
     </div>
   );
+ 
+
+type PollPayload = {
+  slideId: string; // Para saber a qué pregunta pertenece el voto
+  choiceIndex: number;
+  isCorrect: boolean;
+};
+
+function PollComponent({
+  question,
+  options,
+  correctAnswerIndex,
+  slideId,
+  roomId,
+}: {
+  question: string;
+  options: string[];
+  correctAnswerIndex: number;
+  slideId: string;
+  roomId: string;
+}) {
+  const supabase = useMemo(() => createClient(), []);
+  const [votedIndex, setVotedIndex] = useState<number | null>(null);
+
+  const handleVote = (index: number) => {
+    if (votedIndex !== null) return; // Ya votó
+    setVotedIndex(index);
+
+    const payload: PollPayload = {
+      slideId,
+      choiceIndex: index,
+      isCorrect: index === correctAnswerIndex,
+    };
+    const channel = supabase.channel(`ccmx_room_${roomId}`);
+    channel.send({ type: "broadcast", event: "poll_vote", payload });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{question}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {options.map((option, index) => (
+          <Button
+            key={index}
+            variant={votedIndex === index ? "secondary" : "outline"}
+            className="w-full justify-start text-left h-auto py-2 whitespace-normal"
+            onClick={() => handleVote(index)}
+            disabled={votedIndex !== null}
+          >
+            <div className="flex items-center w-full">
+              <span>{option}</span>
+              {votedIndex !== null && (
+                <span className="ml-auto text-lg">
+                  {index === correctAnswerIndex ? '✅' : '❌'}
+                </span>
+              )}
+            </div>
+          </Button>
+        ))}
+        {votedIndex !== null && (
+            <p className="text-sm text-muted-foreground pt-2">
+                ¡Gracias por tu respuesta!
+            </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+// Pon este componente al final de tu archivo
+function PollResultsGraph({ results }: { results?: { correct: number; incorrect: number } }) {
+  if (!results) {
+    return <div className="text-xs text-muted-foreground">Esperando respuestas...</div>;
+  }
+
+  const total = results.correct + results.incorrect;
+  const correctPct = total === 0 ? 0 : (results.correct / total) * 100;
+  const incorrectPct = total === 0 ? 0 : (results.incorrect / total) * 100;
+
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className="w-[80px]">Correctas</span>
+        <div className="w-full bg-muted rounded-full h-4">
+          <div className="bg-green-500 h-4 rounded-full" style={{ width: `${correctPct}%` }}></div>
+        </div>
+        <span className="w-[40px] text-right">{results.correct}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-[80px]">Incorrectas</span>
+        <div className="w-full bg-muted rounded-full h-4">
+          <div className="bg-destructive h-4 rounded-full" style={{ width: `${incorrectPct}%` }}></div>
+        </div>
+        <span className="w-[40px] text-right">{results.incorrect}</span>
+      </div>
+      <div className="text-xs text-muted-foreground text-right">Total de respuestas: {total}</div>
+    </div>
+  );
+}
 }
