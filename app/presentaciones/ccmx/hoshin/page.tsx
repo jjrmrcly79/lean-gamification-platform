@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
+
 // ---------- Tipos Realtime (sin any) ----------
 type NavPayload = { i: number };
 type NotePayload = { id: string; text: string; at: number; from?: string };
@@ -40,7 +41,7 @@ export default function CcmxHoshinPresentation() {
   const supabase = useMemo(() => createClient(), []);
 
   // ===== Branding =====
-  const LOGO_SRC = "/logo.svg"; // cambia si tu logo vive en otro path
+  const LOGO_SRC = "/logo.png"; // cambia si tu logo vive en otro path
 
   // Rol y sala (query params)
   const params = useMemo(
