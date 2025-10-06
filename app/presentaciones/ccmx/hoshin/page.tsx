@@ -355,7 +355,7 @@ function Box({ title, items, setItems }: { title: string; items: { id: string, t
   );
 }
 
-// --- Componente 4 (Re-diseñado): La Matriz X Completa ---
+// --- Componente 4 (Re-diseñado y CORREGIDO): La Matriz X Completa ---
 function XMatrixCard() {
   // State for the main lists
   const [estrategias, setEstrategias] = useState<{ id: string, text: string }[]>([{ id: 's1', text: 'Bajo costo' }]);
@@ -379,37 +379,44 @@ function XMatrixCard() {
         <p className="text-muted-foreground">Define los elementos y conecta las relaciones para alinear la estrategia de tu organización.</p>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-[3fr_1fr_3fr] grid-rows-[3fr_1fr_3fr] gap-4" style={{ minHeight: '700px' }}>
-          {/* Esquinas de Correlación */}
-          <div className="col-start-1 row-start-1"><CorrelationGrid rows={acciones} cols={estrategias} correlations={accionesVsEstrategias} setCorrelations={setAccionesVsEstrategias} /></div>
-          <div className="col-start-3 row-start-1"><ResponsibilityMatrix actions={acciones} people={personas} responsibilities={responsabilidades} setResponsabilidades={setResponsabilidades}/></div>
-          <div className="col-start-1 row-start-3"><CorrelationGrid rows={estrategias} cols={resultados} correlations={estrategiasVsResultados} setCorrelations={setEstrategiasVsResultados} /></div>
-          <div className="col-start-3 row-start-3"><CorrelationGrid rows={procesos} cols={acciones} correlations={procesosVsAcciones} setCorrelations={setProcesosVsAcciones} /></div>
+        {/* --- CAMBIO: La cuadrícula ahora tiene 4 columnas para separar la sección de Responsabilidades --- */}
+        <div className="grid grid-cols-[3fr_1fr_3fr_3fr] grid-rows-[3fr_1fr_3fr] gap-4" style={{ minHeight: '700px' }}>
           
-          {/* Ejes Principales */}
-          <div className="col-start-2 row-start-1"><Box title="Acciones Tácticas (Norte)" items={acciones} setItems={setAcciones} /></div>
-          <div className="col-start-3 row-start-2"><Box title="Métricas (Este)" items={procesos} setItems={setProcesos} /></div>
-          <div className="col-start-2 row-start-3"><Box title="Resultados (Sur)" items={resultados} setItems={setResultados} /></div>
+          {/* --- Columna 1 --- */}
+          <div className="col-start-1 row-start-1"><CorrelationGrid rows={acciones} cols={estrategias} correlations={accionesVsEstrategias} setCorrelations={setAccionesVsEstrategias} /></div>
           <div className="col-start-1 row-start-2"><Box title="Estrategias (Oeste)" items={estrategias} setItems={setEstrategias} /></div>
-
-          {/* Centro y Responsables */}
+          <div className="col-start-1 row-start-3"><CorrelationGrid rows={estrategias} cols={resultados} correlations={estrategiasVsResultados} setCorrelations={setEstrategiasVsResultados} /></div>
+          
+          {/* --- Columna 2 --- */}
+          <div className="col-start-2 row-start-1"><Box title="Acciones Tácticas (Norte)" items={acciones} setItems={setAcciones} /></div>
           <div className="col-start-2 row-start-2 flex items-center justify-center text-center p-2 border rounded-lg">
             <h3 className="font-bold text-lg text-primary">Hoshin Kanri</h3>
           </div>
-          <div className="col-start-3 row-start-1 flex flex-col gap-4">
-             <Box title="Personas" items={personas} setItems={setPersonas} />
-             <Card className="bg-muted/50 p-3 text-xs">
-                <p><strong>Correlaciones:</strong></p>
+          <div className="col-start-2 row-start-3"><Box title="Resultados (Sur)" items={resultados} setItems={setResultados} /></div>
+          
+          {/* --- Columna 3 --- */}
+          <div className="col-start-3 row-start-1"><CorrelationGrid rows={procesos} cols={acciones} correlations={procesosVsAcciones} setCorrelations={setProcesosVsAcciones} /></div>
+          <div className="col-start-3 row-start-2"><Box title="Métricas (Este)" items={procesos} setItems={setProcesos} /></div>
+          {/* La esquina inferior derecha se deja vacía intencionalmente */}
+
+          {/* --- CAMBIO: Columna 4 dedicada a Personas y Responsabilidades --- */}
+          <div className="col-start-4 row-start-1"><ResponsibilityMatrix actions={acciones} people={personas} responsibilities={responsabilidades} setResponsabilidades={setResponsabilidades}/></div>
+          <div className="col-start-4 row-start-2"><Box title="Personas" items={personas} setItems={setPersonas} /></div>
+          <div className="col-start-4 row-start-3 flex flex-col justify-start p-2 border rounded-lg bg-muted/50">
+             <Card className="p-3 text-xs">
+                <p className="font-bold">Correlaciones:</p>
                 <p>⚫ = Fuerte | ⚪ = Apoyo</p>
-                <p className="mt-2"><strong>Responsables:</strong></p>
+                <p className="mt-2 font-bold">Responsables:</p>
                 <p>L = Líder | M = Miembro</p>
              </Card>
           </div>
+
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 // =================================================
 // Contenido de las Diapositivas (VERSIÓN CON CORRECCIONES DE LINTING)
