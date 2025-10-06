@@ -1,5 +1,5 @@
 // app/presentaciones/ccmx/page.tsx - VERSIÓN CORREGIDA FINAL
-'use client'; // <-- MUY IMPORTANTE: Añadir esta línea al principio
+'use client'; 
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
