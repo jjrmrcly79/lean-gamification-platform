@@ -210,68 +210,204 @@ function DownloadFormDialog({ onExport }: { onExport: (details: { name: string; 
   );
 }
 
-function XMatrixCard() {
-  const [resultados, setResultados] = useState<string[]>(["Incrementar ganancias +50%", "Ventas +10%"]);
-  const [estrategias, setEstrategias] = useState<string[]>(["Bajo costo", "Innovación"]);
-  const [procesos, setProcesos] = useState<string[]>(["Satisfacción: ↓ devoluciones 50%", "SMED < 10 min"]);
-  const [acciones, setAcciones] = useState<string[]>(["Lean en todas las plantas", "DFSS en Ingeniería"]);
-  const [niveles, setNiveles] = useState<number[]>([0, 0, 0, 0]);
+// =======================================================================
+// COMPONENTES AVANZADOS PARA LA MATRIZ HOSHIN KANRI
+// Reemplaza tus componentes XMatrixCard y Box existentes con todo este bloque.
+// =======================================================================
 
-  useEffect(() => {
-    function onSuggest(e: Event) {
-      const detail = (e as CustomEvent<MatrixSuggestion>).detail; if (!detail) return;
-      if (detail.kind === "resultado") setResultados((p) => [...new Set([...p, detail.text])]);
-      if (detail.kind === "estrategia") setEstrategias((p) => [...new Set([...p, detail.text])]);
-      if (detail.kind === "proceso") setProcesos((p) => [...new Set([...p, detail.text])]);
-      if (detail.kind === "accion") setAcciones((p) => [...new Set([...p, detail.text])]);
-    }
-    window.addEventListener("matrix_suggest", onSuggest as EventListener);
-    return () => window.removeEventListener("matrix_suggest", onSuggest as EventListener);
-  }, []);
-
-  function cycle(i: number) { setNiveles((prev) => prev.map((v, idx) => (idx === i ? (v + 1) % 4 : v))); }
-
-  function exportJSON(userDetails: { name: string; email: string; company: string; phone: string; }) {
-    const payload = {
-      userDetails,
-      mapaX: {
-        resultados, estrategias, procesos, acciones,
-        correlaciones: [
-          { rel: "Estrategias → Resultados", nivel: niveles[0] }, { rel: "Estrategias → Procesos", nivel: niveles[1] },
-          { rel: "Procesos → Acciones", nivel: niveles[2] }, { rel: "Acciones → Resultados", nivel: niveles[3] },
-        ],
+// --- Componente 1 (Nuevo): Cuadrícula de Correlaciones ---
+function CorrelationGrid({
+  rows,
+  cols,
+  correlations,
+  setCorrelations,
+}: {
+  rows: { id: string, text: string }[];
+  cols: { id: string, text: string }[];
+  correlations: Record<string, Record<string, number>>;
+  setCorrelations: React.Dispatch<React.SetStateAction<Record<string, Record<string, number>>>>;
+}) {
+  const handleCorrelationChange = (rowId: string, colId: string) => {
+    setCorrelations(prev => {
+      const newCorrelations = JSON.parse(JSON.stringify(prev)); // Deep copy
+      const currentCorrelation = newCorrelations[rowId]?.[colId] || 0;
+      const nextCorrelation = (currentCorrelation + 1) % 3; // Cycles 0 -> 1 -> 2 -> 0
+      
+      if (!newCorrelations[rowId]) {
+        newCorrelations[rowId] = {};
       }
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `mapa_x_${userDetails.company.replace(/\s/g, '_')}.json`;
-    a.click();
-  }
+      newCorrelations[rowId][colId] = nextCorrelation;
+      return newCorrelations;
+    });
+  };
 
   return (
-    <Card>
-      <CardHeader><CardTitle>Taller: Construye tu Matriz X</CardTitle><p className="text-muted-foreground">Usa los campos para añadir los elementos de tu propia empresa. La audiencia también puede proponer ideas.</p></CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-3">
-          <Box title="1. Resultados Clave" items={resultados} onChange={setResultados} />
-          <Box title="2. Estrategias" items={estrategias} onChange={setEstrategias} />
-          <Box title="3. Acciones Tácticas" items={acciones} onChange={setAcciones} />
-          <Box title="4. Desempeño de Procesos" items={procesos} onChange={setProcesos} />
-        </div>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-base">5. Correlaciones</CardTitle></CardHeader><CardContent className="pt-4"><div className="grid md:grid-cols-2 gap-2">{["Estrategias → Resultados", "Estrategias → Procesos", "Procesos → Acciones", "Acciones → Resultados"].map((lab, i) => (<Button key={lab} variant={niveles[i] > 0 ? "secondary" : "outline"} className={cn("justify-between", niveles[i] > 0 && "border-primary")} onClick={() => cycle(i)}><span>{lab}</span><Badge>{niveles[i]}</Badge></Button>))}</div></CardContent></Card>
-        <div className="flex justify-center pt-4"><DownloadFormDialog onExport={exportJSON} /></div>
-      </CardContent>
-    </Card>
+    <div className="overflow-x-auto p-2 border rounded-lg bg-background">
+      <table className="w-full text-xs text-center border-collapse">
+        <thead>
+          <tr>
+            <th className="border p-1 w-1/4"></th>
+            {cols.map(col => (
+              <th key={col.id} className="border p-1" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                <span className="transform -rotate-180">{col.text.substring(0, 15)}...</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.id}>
+              <td className="border p-1 text-left font-semibold">{row.text}</td>
+              {cols.map(col => (
+                <td key={col.id} className="border p-1">
+                  <button onClick={() => handleCorrelationChange(row.id, col.id)} className="w-6 h-6 rounded-full flex items-center justify-center m-auto">
+                    {correlations[row.id]?.[col.id] === 2 ? '⚫' : correlations[row.id]?.[col.id] === 1 ? '⚪' : ''}
+                  </button>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-function Box({ title, items, onChange }: { title: string; items: string[]; onChange: (v: string[]) => void; }) {
+// --- Componente 2 (Nuevo): Matriz de Responsabilidades ---
+function ResponsibilityMatrix({
+  actions,
+  people,
+  responsibilities,
+  setResponsabilidades, // Corregido a español
+}: {
+  actions: { id: string, text: string }[];
+  people: { id: string, text: string }[];
+  responsibilities: Record<string, Record<string, 'L' | 'M'>>;
+  setResponsabilidades: React.Dispatch<React.SetStateAction<Record<string, Record<string, 'L' | 'M'>>>>; // Corregido a español
+}) {
+    const roles = ['', 'L', 'M']; // Vacío, Líder, Miembro
+    
+    const handleResponsibilityChange = (actionId: string, personId: string) => {
+        // Corregido a español
+        setResponsabilidades(prev => {
+            const newResp = JSON.parse(JSON.stringify(prev));
+            const currentRole = newResp[actionId]?.[personId] || '';
+            const nextRoleIndex = (roles.indexOf(currentRole) + 1) % roles.length;
+            const nextRole = roles[nextRoleIndex];
+
+            if (!newResp[actionId]) {
+                newResp[actionId] = {};
+            }
+            if (nextRole) {
+                newResp[actionId][personId] = nextRole as 'L' | 'M';
+            } else {
+                delete newResp[actionId][personId];
+            }
+            return newResp;
+        });
+    };
+
+    return (
+        <div className="overflow-x-auto p-2 border rounded-lg bg-background">
+            <table className="w-full text-xs text-center border-collapse">
+                <thead>
+                    <tr>
+                        <th className="border p-1 w-1/4"></th>
+                        {people.map(p => (
+                            <th key={p.id} className="border p-1" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                                <span className="transform -rotate-180">{p.text}</span>
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {actions.map(action => (
+                        <tr key={action.id}>
+                            <td className="border p-1 text-left font-semibold">{action.text}</td>
+                            {people.map(person => (
+                                <td key={person.id} className="border p-1">
+                                    <button onClick={() => handleResponsibilityChange(action.id, person.id)} className="w-6 h-6 rounded-sm flex items-center justify-center m-auto font-bold">
+                                        {responsibilities[action.id]?.[person.id] || ''}
+                                    </button>
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+// --- Componente 3 (Actualizado): Contenedor de Items ---
+function Box({ title, items, setItems }: { title: string; items: { id: string, text: string }[]; setItems: (items: { id: string, text: string }[]) => void; }) {
   const [text, setText] = useState("");
-  function addItem() { const t = text.trim(); if (!t) return; onChange([...new Set([...items, t])]); setText(""); }
-  function removeItem(idx: number) { onChange(items.filter((_, i) => i !== idx)); }
+  const addItem = () => {
+    const t = text.trim(); if (!t) return;
+    setItems([...items, { id: crypto.randomUUID(), text: t }]);
+    setText("");
+  };
+  const removeItem = (idToRemove: string) => {
+    setItems(items.filter(item => item.id !== idToRemove));
+  };
   return (
-    <div className="rounded-xl border p-3"><div className="font-semibold mb-2">{title}</div><div className="flex gap-2 mb-2"><Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Añadir ítem…" onKeyDown={(e) => e.key === "Enter" && addItem()} /><Button onClick={addItem}>+</Button></div><div className="flex flex-wrap gap-2">{items.map((it, i) => (<Badge key={i} variant="outline" className="group whitespace-normal"><span>{it}</span><button onClick={() => removeItem(i)} className="ml-2 opacity-60 group-hover:opacity-100 hover:text-destructive" aria-label="Eliminar">×</button></Badge>))}</div></div>
+    <div className="rounded-xl border p-3 h-full flex flex-col"><div className="font-semibold mb-2">{title}</div><div className="flex gap-2 mb-2"><Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Añadir ítem…" onKeyDown={(e) => e.key === "Enter" && addItem()} /><Button onClick={addItem}>+</Button></div><div className="flex flex-col gap-2 overflow-y-auto"><ScrollArea className="h-32 pr-4">{items.map((it) => (<Badge key={it.id} variant="outline" className="group whitespace-normal w-full justify-between"><span>{it.text}</span><button onClick={() => removeItem(it.id)} className="ml-2 opacity-60 group-hover:opacity-100 hover:text-destructive" aria-label="Eliminar">×</button></Badge>))}</ScrollArea></div></div>
+  );
+}
+
+// --- Componente 4 (Re-diseñado): La Matriz X Completa ---
+function XMatrixCard() {
+  // State for the main lists
+  const [estrategias, setEstrategias] = useState<{ id: string, text: string }[]>([{ id: 's1', text: 'Bajo costo' }]);
+  const [acciones, setAcciones] = useState<{ id: string, text: string }[]>([{ id: 'a1', text: 'Lean en plantas' }]);
+  const [procesos, setProcesos] = useState<{ id: string, text: string }[]>([{ id: 'p1', text: 'SMED < 10 min' }]);
+  const [resultados, setResultados] = useState<{ id: string, text: string }[]>([{ id: 'r1', text: 'Ganancias +50%' }]);
+  const [personas, setPersonas] = useState<{ id: string, text: string }[]>([{ id: 'pe1', text: 'J. García' }]);
+
+  // State for correlations
+  const [estrategiasVsResultados, setEstrategiasVsResultados] = useState<Record<string, Record<string, number>>>({});
+  const [accionesVsEstrategias, setAccionesVsEstrategias] = useState<Record<string, Record<string, number>>>({});
+  const [procesosVsAcciones, setProcesosVsAcciones] = useState<Record<string, Record<string, number>>>({});
+  
+  // State for responsibilities
+  const [responsabilidades, setResponsabilidades] = useState<Record<string, Record<string, 'L' | 'M'>>>({});
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Matriz Hoshin Kanri (X)</CardTitle>
+        <p className="text-muted-foreground">Define los elementos y conecta las relaciones para alinear la estrategia de tu organización.</p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-[3fr_1fr_3fr] grid-rows-[3fr_1fr_3fr] gap-4" style={{ minHeight: '700px' }}>
+          {/* Esquinas de Correlación */}
+          <div className="col-start-1 row-start-1"><CorrelationGrid rows={acciones} cols={estrategias} correlations={accionesVsEstrategias} setCorrelations={setAccionesVsEstrategias} /></div>
+          <div className="col-start-3 row-start-1"><ResponsibilityMatrix actions={acciones} people={personas} responsibilities={responsabilidades} setResponsabilidades={setResponsabilidades}/></div>
+          <div className="col-start-1 row-start-3"><CorrelationGrid rows={estrategias} cols={resultados} correlations={estrategiasVsResultados} setCorrelations={setEstrategiasVsResultados} /></div>
+          <div className="col-start-3 row-start-3"><CorrelationGrid rows={procesos} cols={acciones} correlations={procesosVsAcciones} setCorrelations={setProcesosVsAcciones} /></div>
+          
+          {/* Ejes Principales */}
+          <div className="col-start-2 row-start-1"><Box title="Acciones Tácticas (Norte)" items={acciones} setItems={setAcciones} /></div>
+          <div className="col-start-3 row-start-2"><Box title="Métricas (Este)" items={procesos} setItems={setProcesos} /></div>
+          <div className="col-start-2 row-start-3"><Box title="Resultados (Sur)" items={resultados} setItems={setResultados} /></div>
+          <div className="col-start-1 row-start-2"><Box title="Estrategias (Oeste)" items={estrategias} setItems={setEstrategias} /></div>
+
+          {/* Centro y Responsables */}
+          <div className="col-start-2 row-start-2 flex items-center justify-center text-center p-2 border rounded-lg">
+            <h3 className="font-bold text-lg text-primary">Hoshin Kanri</h3>
+          </div>
+          <div className="col-start-3 row-start-1 flex flex-col gap-4">
+             <Box title="Personas" items={personas} setItems={setPersonas} />
+             <Card className="bg-muted/50 p-3 text-xs">
+                <p><strong>Correlaciones:</strong></p>
+                <p>⚫ = Fuerte | ⚪ = Apoyo</p>
+                <p className="mt-2"><strong>Responsables:</strong></p>
+                <p>L = Líder | M = Miembro</p>
+             </Card>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
