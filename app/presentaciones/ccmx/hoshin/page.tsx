@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,32 +13,32 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
 /**
- * CCMX Hoshin Kanri – Presentación Interactiva (v2)
- * Mejoras:
- * - Vista de presentador (pantalla completa del slide) con TOC colapsable.
- * - Vista de audiencia con QR para unirse (o enlace).
- * - Canal en tiempo real (Supabase Realtime) para sincronizar navegación y recibir interacciones.
- * - Muro de mensajes (audiencia escribe; consultor ve en vivo y puede proyectar).
- * - Matriz X sigue siendo editable por el presentador; la audiencia puede sugerir ítems.
- *
- * Rutas sugeridas:
- *   /presentaciones/ccmx/hoshin           → modo presentador por defecto
- *   /presentaciones/ccmx/hoshin?role=aud  → modo audiencia
- *   /presentaciones/ccmx/hoshin?room=abc  → fija roomId (opcional)
+ * CCMX Hoshin Kanri – Presentación Interactiva (v2.1)
+ * Cambios para compilar en Vercel sin errores ESLint/TS:
+ * - Tipado de payloads Realtime (sin any)
+ * - roomId con useMemo (sin setRoomId)
+ * - <Image /> en lugar de <img />
+ * - Limpieza de imports sin uso
  */
+
+// Tipos Realtime (sin any)
+type NavPayload = { i: number };
+type NotePayload = { id: string; text: string; at: number; from?: string };
+export type MatrixSuggestion = { id: string; kind: 'resultado'|'estrategia'|'proceso'|'accion'; text: string; at: number; from?: string };
+type BroadcastEnvelope<T> = { event: string; type: 'broadcast'; payload: T };
 
 export default function CcmxHoshinPresentation() {
   const supabase = useMemo(() => createClient(), []);
-  // Modo
+
+  // Rol y sala
   const params = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''), []);
   const roleParam = params.get("role");
   const isAudience = roleParam === "aud" || roleParam === "audience";
 
-  // Sala
-  const [roomId, setRoomId] = useState<string>(() => {
+  const roomId = useMemo<string>(() => {
     const q = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     return q.get("room") || Math.random().toString(36).slice(2, 8);
-  });
+  }, []);
 
   // UI state
   const [showTOC, setShowTOC] = useState(false); // TOC colapsable
@@ -54,20 +55,19 @@ export default function CcmxHoshinPresentation() {
     const channel = supabase.channel(`ccmx_room_${roomId}`);
 
     // recibir navegación del presentador
-    channel.on('broadcast', { event: 'nav' }, (payload: any) => {
-      if (isAudience) setIndex(payload?.payload?.i ?? 0);
+    channel.on('broadcast', { event: 'nav' }, (env: BroadcastEnvelope<NavPayload>) => {
+      if (isAudience) setIndex(env.payload?.i ?? 0);
     });
 
     // recibir mensajes de audiencia
-    channel.on('broadcast', { event: 'note' }, (payload: any) => {
-      const item = payload?.payload as { id:string; text:string; at:number; from?:string };
+    channel.on('broadcast', { event: 'note' }, (env: BroadcastEnvelope<NotePayload>) => {
+      const item = env.payload;
       setWall((prev) => [item, ...prev].slice(0, 200));
     });
 
     // recibir sugerencias para Matriz X
-    channel.on('broadcast', { event: 'matrix_suggest' }, (payload:any) => {
-      const s = payload?.payload as MatrixSuggestion;
-      // reenviamos a componente por event dispatch (simple)
+    channel.on('broadcast', { event: 'matrix_suggest' }, (env: BroadcastEnvelope<MatrixSuggestion>) => {
+      const s = env.payload;
       window.dispatchEvent(new CustomEvent<MatrixSuggestion>('matrix_suggest', { detail: s }));
     });
 
@@ -207,7 +207,13 @@ function PresenterPanel({ roomId, joinUrl, wall, setIndex, slides }: {
         <CardHeader className="pb-2"><CardTitle className="text-base">Audiencia: únanse con QR</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           <div className="grid place-items-center">
-            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(joinUrl)}`} alt="QR" className="rounded" />
+            <Image
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(joinUrl)}`}
+              alt="QR para unirse"
+              width={180}
+              height={180}
+              className="rounded"
+            />
           </div>
           <Input readOnly value={joinUrl} className="text-xs" />
           <div className="text-xs text-muted-foreground">Sala: <Badge variant="outline">{roomId}</Badge></div>
@@ -254,16 +260,17 @@ function AudiencePanel({ roomId, joinUrl, audienceMsg, setAudienceMsg }: {
   setAudienceMsg: (v: string) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
+
   function sendNote() {
     const text = audienceMsg.trim();
     if (!text) return;
-    const payload = { id: crypto.randomUUID(), text, at: Date.now() };
+    const payload: NotePayload = { id: crypto.randomUUID(), text, at: Date.now() };
     const channel = supabase.channel(`ccmx_room_${roomId}`);
     channel.send({ type: 'broadcast', event: 'note', payload });
     setAudienceMsg("");
   }
 
-  function suggestToMatrix(kind: 'resultado'|'estrategia'|'proceso'|'accion'){
+  function suggestToMatrix(kind: MatrixSuggestion['kind']){
     const text = audienceMsg.trim();
     if (!text) return;
     const payload: MatrixSuggestion = { id: crypto.randomUUID(), kind, text, at: Date.now() };
@@ -302,7 +309,7 @@ function AudiencePanel({ roomId, joinUrl, audienceMsg, setAudienceMsg }: {
 }
 
 // ————————————————————————————————————————
-// Construcción de slides (contenido + Matriz X con sugerencias)
+// Construcción de slides
 function buildSlides(): Slide[] {
   return [
     {
@@ -383,7 +390,7 @@ function buildSlides(): Slide[] {
 }
 
 // ————————————————————————————————————————
-// Matriz X (presentador editable) + recepción de sugerencias
+// Matriz X (presentador editable)
 function XMatrixCard() {
   const [resultados, setResultados] = useState<string[]>([
     "Incrementar ganancias +50%",
@@ -479,4 +486,3 @@ function Box({ title, items, onChange }: { title: string; items: string[]; onCha
 
 // Tipos
 interface Slide { id: string; title: string; content: React.ReactNode; }
-interface MatrixSuggestion { id: string; kind: 'resultado'|'estrategia'|'proceso'|'accion'; text: string; at: number; from?: string; }
