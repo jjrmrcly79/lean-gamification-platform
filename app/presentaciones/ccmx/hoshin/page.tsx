@@ -1,10 +1,11 @@
+// ===== CÓDIGO COMPLETO Y DEFINITIVO - page.tsx =====
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-// --- NUEVO: Imports para Pop-ups (Dialog) ---
+// Imports para Pop-ups (Dialog)
 import {
   Dialog,
   DialogContent,
@@ -58,7 +59,7 @@ export default function CcmxHoshinPresentation() {
   // ---- Estados del Componente ----
   const [index, setIndex] = useState(0);
   const [showTOC, setShowTOC] = useState(false);
-  const [isLight, setIsLight] = useState(false); // --- RESTAURADO: Estado de modo claro/oscuro ---
+  const [isLight, setIsLight] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [wall, setWall] = useState<Array<NotePayload>>([]);
   const [audienceMsg, setAudienceMsg] = useState("");
@@ -119,10 +120,9 @@ export default function CcmxHoshinPresentation() {
             {!isAudience && (<><Button variant="outline" onClick={() => setIndex((i) => Math.max(i - 1, 0))}>←</Button><Button onClick={() => setIndex((i) => Math.min(i + 1, slides.length - 1))}>→</Button></>)}
             <span className="text-sm text-muted-foreground ml-1">{index + 1} / {slides.length}</span>
             <div className="ml-auto flex items-center gap-2">
-              {/* --- RESTAURADO: Botón de modo claro/oscuro --- */}
               <Button variant="outline" onClick={() => setIsLight((v) => !v)}>{isLight ? "🌙 Oscuro" : "☀️ Claro"}</Button>
               <Button variant="outline" onClick={() => setShowTOC((v) => !v)}>☰ Índice</Button>
-              <Button variant="outline" className="md:hidden" onClick={() => setShowPanel(true)}>💬</Button>
+              <Button variant="outline" className="md-hidden" onClick={() => setShowPanel(true)}>💬</Button>
             </div>
           </div>
           <div className="px-2 pb-2"><Progress value={pct} className="h-1" /></div>
@@ -177,12 +177,44 @@ function PollComponent({ question, options, correctAnswerIndex, slideId, roomId 
   return (<Card><CardHeader><CardTitle>{question}</CardTitle></CardHeader><CardContent className="space-y-2">{options.map((option, index) => (<Button key={index} variant={votedIndex === index ? (index === correctAnswerIndex ? "default" : "destructive") : "outline"} className="w-full justify-start text-left h-auto py-2 whitespace-normal" onClick={() => handleVote(index)} disabled={votedIndex !== null}><div className="flex items-center w-full"><span>{option}</span>{votedIndex !== null && (<span className="ml-auto text-lg">{index === correctAnswerIndex ? '✅' : '❌'}</span>)}</div></Button>))}{votedIndex !== null && (<p className="text-sm text-muted-foreground pt-2">¡Gracias por tu respuesta!</p>)}</CardContent></Card>);
 }
 
-// --- RESTAURADO: Componente completo de la Matriz X ---
+function DownloadFormDialog({ onExport }: { onExport: (details: { name: string; email: string; company: string; phone: string; }) => void; }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleDownload = () => {
+    if (name && email && company && phone) {
+      onExport({ name, email, company, phone });
+      setIsOpen(false);
+    } else {
+      alert("Por favor, completa todos los campos.");
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild><Button>⬇️ Descargar Mapa X</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Completa tus datos para descargar</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-4">
+          <Input placeholder="Nombre Completo" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input placeholder="Correo Electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input placeholder="Empresa" value={company} onChange={(e) => setCompany(e.target.value)} />
+          <Input placeholder="Teléfono" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Button onClick={handleDownload} className="w-full">Descargar</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function XMatrixCard() {
-  const [resultados, setResultados] = useState<string[]>(["Incrementar ganancias +50%", "Ventas +10%", "Certificación (Industria Limpia)"]);
-  const [estrategias, setEstrategias] = useState<string[]>(["Bajo costo", "Innovación", "Servicio excelente"]);
-  const [procesos, setProcesos] = useState<string[]>(["Satisfacción: ↓ devoluciones 50%", "SMED < 10 min", "Multihabilidades 100% (Línea B)"]);
-  const [acciones, setAcciones] = useState<string[]>(["Lean en todas las plantas", "DFSS en Ingeniería", "Cambio rápido en prensas", "QFD nuevo producto"]);
+  const [resultados, setResultados] = useState<string[]>(["Incrementar ganancias +50%", "Ventas +10%"]);
+  const [estrategias, setEstrategias] = useState<string[]>(["Bajo costo", "Innovación"]);
+  const [procesos, setProcesos] = useState<string[]>(["Satisfacción: ↓ devoluciones 50%", "SMED < 10 min"]);
+  const [acciones, setAcciones] = useState<string[]>(["Lean en todas las plantas", "DFSS en Ingeniería"]);
   const [niveles, setNiveles] = useState<number[]>([0, 0, 0, 0]);
 
   useEffect(() => {
@@ -199,24 +231,41 @@ function XMatrixCard() {
 
   function cycle(i: number) { setNiveles((prev) => prev.map((v, idx) => (idx === i ? (v + 1) % 4 : v))); }
 
+  function exportJSON(userDetails: { name: string; email: string; company: string; phone: string; }) {
+    const payload = {
+      userDetails,
+      mapaX: {
+        resultados, estrategias, procesos, acciones,
+        correlaciones: [
+          { rel: "Estrategias → Resultados", nivel: niveles[0] }, { rel: "Estrategias → Procesos", nivel: niveles[1] },
+          { rel: "Procesos → Acciones", nivel: niveles[2] }, { rel: "Acciones → Resultados", nivel: niveles[3] },
+        ],
+      }
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `mapa_x_${userDetails.company.replace(/\s/g, '_')}.json`;
+    a.click();
+  }
+
   return (
     <Card>
-      <CardHeader><CardTitle>Matriz Hoshin Kanri (X)</CardTitle></CardHeader>
+      <CardHeader><CardTitle>Taller: Construye tu Matriz X</CardTitle><p className="text-muted-foreground">Usa los campos para añadir los elementos de tu propia empresa. La audiencia también puede proponer ideas.</p></CardHeader>
       <CardContent className="space-y-4">
         <div className="grid md:grid-cols-2 gap-3">
-          <Box title="Resultados" items={resultados} onChange={setResultados} />
-          <Box title="Estrategias" items={estrategias} onChange={setEstrategias} />
-          <Box title="Desempeño de procesos" items={procesos} onChange={setProcesos} />
-          <Box title="Acciones tácticas" items={acciones} onChange={setAcciones} />
+          <Box title="1. Resultados Clave" items={resultados} onChange={setResultados} />
+          <Box title="2. Estrategias" items={estrategias} onChange={setEstrategias} />
+          <Box title="3. Acciones Tácticas" items={acciones} onChange={setAcciones} />
+          <Box title="4. Desempeño de Procesos" items={procesos} onChange={setProcesos} />
         </div>
-        <div className="grid md:grid-cols-4 gap-2">{["Estrategias → Resultados", "Estrategias → Procesos", "Procesos → Acciones", "Acciones → Resultados"].map((lab, i) => (<Button key={lab} variant={niveles[i] > 0 ? "secondary" : "outline"} className={cn("justify-between", niveles[i] > 0 && "border-primary")} onClick={() => cycle(i)}><span>{lab}</span><span className="text-muted-foreground">· {niveles[i]}</span></Button>))}</div>
-        <div className="rounded-lg border p-3 text-sm text-muted-foreground">La audiencia puede proponer elementos; aquí se agregan automáticamente por tipo.</div>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-base">5. Correlaciones</CardTitle></CardHeader><CardContent className="pt-4"><div className="grid md:grid-cols-2 gap-2">{["Estrategias → Resultados", "Estrategias → Procesos", "Procesos → Acciones", "Acciones → Resultados"].map((lab, i) => (<Button key={lab} variant={niveles[i] > 0 ? "secondary" : "outline"} className={cn("justify-between", niveles[i] > 0 && "border-primary")} onClick={() => cycle(i)}><span>{lab}</span><Badge>{niveles[i]}</Badge></Button>))}</div></CardContent></Card>
+        <div className="flex justify-center pt-4"><DownloadFormDialog onExport={exportJSON} /></div>
       </CardContent>
     </Card>
   );
 }
 
-// --- RESTAURADO: Componente de apoyo para la Matriz X ---
 function Box({ title, items, onChange }: { title: string; items: string[]; onChange: (v: string[]) => void; }) {
   const [text, setText] = useState("");
   function addItem() { const t = text.trim(); if (!t) return; onChange([...new Set([...items, t])]); setText(""); }
@@ -226,89 +275,30 @@ function Box({ title, items, onChange }: { title: string; items: string[]; onCha
   );
 }
 
-
 // =================================================
-// Contenido de las Diapositivas (VERSIÓN FINAL Y CORREGIDA)
+// Contenido de las Diapositivas
 // =================================================
 function buildSlides(logoSrc: string, roomId: string): Slide[] {
   return [
     { id: "portada", title: "Portada", content: (<Card><CardHeader><div className="flex items-center gap-2 text-sm text-muted-foreground"><Image src={logoSrc} alt="Logo" width={20} height={20} className="rounded" /><span>CCMX</span></div><CardTitle className="text-3xl md:text-4xl leading-tight">Uso de <em>Hoshin Kanri</em> para la Planeación Estratégica</CardTitle></CardHeader><CardContent><p className="text-muted-foreground text-lg">Diplomado en estrategia, planeación e innovación.</p></CardContent></Card>),},
-    { id: "objetivo", title: "Objetivo General", content: (<Card><CardHeader><CardTitle>Objetivo General</CardTitle></CardHeader><CardContent><p className="text-lg">Formar una idea inicial de cómo usar <strong>Hoshin Kanri</strong> para beneficio de su negocio.</p></CardContent></Card>),},
-    { id: "estrategia", title: "¿Qué es la estrategia?", content: (<Card><CardHeader><CardTitle>¿En qué consiste la estrategia?</CardTitle></CardHeader><CardContent><blockquote className="text-xl border-l-2 pl-6 italic">“…tomar decisiones para <strong>ganar</strong> en el mercado.”</blockquote><p className="text-right text-muted-foreground">- Michael Porter</p></CardContent></Card>),},
-    { id: "poll-estrategia", title: "Pregunta: Estrategia", cognitiveLevel: "Recordar", knowledgeType: "Fáctico", content: (<PollComponent slideId="poll-estrategia" roomId={roomId} question="Según la definición de Porter, la estrategia es tomar decisiones para..." options={["Reducir costos", "Ganar en el mercado", "Innovar productos"]} correctAnswerIndex={1} />),},
-    {
-      id: "jerarquia",
-      title: "Jerarquía Estratégica",
-      cognitiveLevel: "Recordar",
-      knowledgeType: "Conceptual",
-      content: (
-        <Card>
-          <CardHeader><CardTitle>Jerarquía Estratégica</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div><strong className="text-lg">1. Corporativa</strong><p className="text-sm text-muted-foreground">Define el ADN estratégico a nivel corporativo.</p></div>
-              <Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Corporativo</DialogTitle></DialogHeader><p>Inicia el proceso definiendo el ADN estratégico a nivel corporativo. [cite_start]Se enfoca en las expectativas de crecimiento, impacto, reconocimiento, etc. [cite: 175]</p></DialogContent></Dialog>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div><strong className="text-lg">2. De Negocio</strong><p className="text-sm text-muted-foreground">Define estrategias por unidad de negocio.</p></div>
-              [cite_start]<Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel de Negocio</DialogTitle></DialogHeader><p>Los líderes de la planeación por negocio definen las estrategias, indicadores o acciones a tomar para contribuir a las metas corporativas. [cite: 177]</p></DialogContent></Dialog>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div><strong className="text-lg">3. Funcional</strong><p className="text-sm text-muted-foreground">Áreas (Finanzas, MKT) que habilitan las metas.</p></div>
-              [cite_start]<Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Funcional</DialogTitle></DialogHeader><p>Según las áreas funcionales que tenga la organización, cada una se suma en su área de dominio para asegurar que los negocios logren sus objetivos. [cite: 180]</p></DialogContent></Dialog>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div><strong className="text-lg">4. Operativa</strong><p className="text-sm text-muted-foreground">Asegura la correcta operación del core business.</p></div>
-              [cite_start]<Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Operativo</DialogTitle></DialogHeader><p>En ciertas ocasiones las empresas son tan grandes que requieren un cuarto nivel, el cual asegura una correcta operación dentro del core business o de una gran área funcional. [cite: 183]</p></DialogContent></Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      ),
-    },
+    { id: "objetivo", title: "Objetivo General", content: (<Card><CardHeader><CardTitle>Objetivo General</CardTitle></CardHeader><CardContent><p className="text-lg">Que el participante se forme una idea inicial de cómo usar la metodología Hoshin Kanri para beneficio de su negocio.</p></CardContent></Card>),},
+    { id: "que-es-estrategia", title: "¿Qué es la estrategia?", content: (<Card><CardHeader><CardTitle>¿En qué consiste la estrategia?</CardTitle></CardHeader><CardContent><blockquote className="text-xl border-l-2 pl-6 italic">"...en tomar decisiones para ganar en el mercado."</blockquote><p className="text-right text-muted-foreground">- Michael Porter</p></CardContent></Card>),},
+    { id: "poll-estrategia", title: "Pregunta: ¿Qué es la estrategia?", cognitiveLevel: "Recordar", knowledgeType: "Fáctico", content: (<PollComponent slideId="poll-estrategia" roomId={roomId} question="Según la definición de Porter, la estrategia es tomar decisiones para..." options={["Reducir costos", "Ganar en el mercado", "Innovar productos"]} correctAnswerIndex={1} />),},
+    { id: "formula-exito", title: "Fórmula para el Éxito", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Fórmula para Gestionar Hacia el Éxito</CardTitle></CardHeader><CardContent className="text-center"><p className="text-2xl font-semibold bg-muted p-4 rounded-lg">P.C. + P.C. = R.P.R.</p><div className="grid md:grid-cols-2 gap-4 mt-4 text-left"><div className="p-3 rounded-lg border"><strong>Personas Capaces:</strong> Cuenta con las competencias necesarias para realizar el trabajo asignado en este momento.</div><div className="p-3 rounded-lg border"><strong>Procesos Capaces:</strong> Al ser operado correctamente produce resultados que permanecen dentro de los límites definidos por las necesidades o expectativas del cliente.</div></div><p className="mt-4 text-lg">El resultado son <strong>Resultados Predecibles y Repetibles</strong>.</p></CardContent></Card>),},
+    { id: "poll-formula", title: "Pregunta: Fórmula del Éxito", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-formula" roomId={roomId} question="En la fórmula P.C. + P.C. = R.P.R., ¿qué significa la primera 'P.C.'?" options={["Procesos Capaces", "Personas Clave", "Personas Capaces", "Planes Concretos"]} correctAnswerIndex={2} />),},
+    { id: "etapas-empresa", title: "Etapas en la Empresa", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Etapas en la Vida de una Empresa</CardTitle></CardHeader><CardContent className="space-y-3"><p>Cada etapa presenta retos y objetivos distintos.</p><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>1. Conceptualización o Inicio:</strong> Se genera la idea y se establecen los fundamentos.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapa 1: Conceptualización</DialogTitle></DialogHeader><p>Es la etapa en la que se genera la idea del negocio, se realiza la planificación, investigación de mercado y se establecen los fundamentos de la empresa. El principal reto es pasar de la <strong>incertidumbre</strong> (análisis) a la <strong>certeza</strong> (lanzamiento).</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>2. Lanzamiento:</strong> La empresa comienza sus operaciones oficialmente.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapa 2: Lanzamiento</DialogTitle></DialogHeader><p>La empresa comienza sus operaciones, con la puesta en marcha de productos o servicios. El reto es pasar de la <strong>inestabilidad</strong> (problemas iniciales) a la <strong>estabilidad</strong> (mejora y crecimiento).</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>3. Crecimiento y Consolidación:</strong> Aumento en ventas y optimización de procesos.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapas 3 y 4: Crecimiento y Consolidación</DialogTitle></DialogHeader><p>La empresa experimenta aumento en ventas y expansión. Posteriormente, alcanza su máximo nivel de crecimiento, consolidando su presencia en el mercado y optimizando sus procesos.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>4. Declive y Reinvención:</strong> Disminución en ventas que requiere una modernización.</div></div></CardContent></Card>),},
+    { id: "poll-etapas", title: "Pregunta: Etapas", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-etapas" roomId={roomId} question="¿Cuál es el principal reto a superar en la etapa de 'Lanzamiento'?" options={["De la incertidumbre a la certeza", "De la inestabilidad a la estabilidad", "Del crecimiento a la consolidación"]} correctAnswerIndex={1} />),},
+    { id: "estructuras-gestion", title: "Estructuras de Gestión", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Estructuras de Gestión</CardTitle></CardHeader><CardContent><div className="grid md:grid-cols-2 gap-4"><div className="p-3 rounded-lg border"><strong>Gestión Estratégica:</strong> Enfoque en el largo plazo para alcanzar una ventaja competitiva.</div><div className="p-3 rounded-lg border"><strong>Gestión Operativa:</strong> Enfoque en los planes e implementaciones del corto plazo.</div><div className="p-3 rounded-lg border"><strong>Gestión Financiera/Admin:</strong> Enfoque en el control de los recursos en todos los procesos de la compañía.</div><div className="p-3 rounded-lg border bg-primary/10"><strong>Gestión de la Mejora:</strong> Enfoque en uso eficiente de los recursos durante el proceso productivo, integrando y mejorando las otras tres gestiones.</div></div></CardContent></Card>),},
+    { id: "jerarquia", title: "Jerarquía Estratégica", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Jerarquía Estratégica</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">1. Corporativa</strong><p className="text-sm text-muted-foreground">Define el ADN estratégico a nivel corporativo.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Corporativo</DialogTitle></DialogHeader><p>Inicia el proceso definiendo el ADN estratégico a nivel corporativo. Se enfoca en las expectativas de crecimiento, impacto, reconocimiento, etc.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">2. De Negocio</strong><p className="text-sm text-muted-foreground">Define estrategias por unidad de negocio.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel de Negocio</DialogTitle></DialogHeader><p>Los líderes de la planeación por negocio definen las estrategias, indicadores o acciones a tomar para contribuir a las metas corporativas.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">3. Funcional</strong><p className="text-sm text-muted-foreground">Áreas (Finanzas, MKT) que habilitan las metas.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Funcional</DialogTitle></DialogHeader><p>Según las áreas funcionales que tenga la organización, cada una se suma en su área de dominio para asegurar que los negocios logren sus objetivos.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">4. Operativa</strong><p className="text-sm text-muted-foreground">Asegura la correcta operación del core business.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Operativo</DialogTitle></DialogHeader><p>En ciertas ocasiones las empresas son tan grandes que requieren un cuarto nivel, el cual asegura una correcta operación dentro del core business o de una gran área funcional.</p></DialogContent></Dialog></div></CardContent></Card>),},
     { id: "poll-jerarquia", title: "Pregunta: Jerarquía", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-jerarquia" roomId={roomId} question="¿Qué nivel de la jerarquía se enfoca en cómo un área (ej. Finanzas) apoya las metas?" options={["Corporativa", "De Negocio", "Funcional"]} correctAnswerIndex={2} />),},
-    {
-      id: "adn",
-      title: "ADN Estratégico",
-      cognitiveLevel: "Recordar",
-      knowledgeType: "Conceptual",
-      content: (
-        <Card>
-          <CardHeader><CardTitle>ADN Estratégico</CardTitle></CardHeader>
-          <CardContent className="grid md:grid-cols-3 gap-4">
-            <div className="p-3 rounded-lg border text-center">
-              <strong className="text-lg">Visión</strong>
-              <p className="text-sm text-muted-foreground h-12">¿Hacia dónde vamos?</p>
-              <Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Visión</DialogTitle></DialogHeader><p>Define qué queremos llegar a ser y hacia dónde vamos. [cite_start]Es donde aspiras estar y sirve de inspiración y orientación. [cite: 232, 233, 238]</p></DialogContent></Dialog>
-            </div>
-            <div className="p-3 rounded-lg border text-center">
-              <strong className="text-lg">Misión</strong>
-              <p className="text-sm text-muted-foreground h-12">¿Quiénes somos y qué hacemos?</p>
-              [cite_start]<Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Misión</DialogTitle></DialogHeader><p>Define cuál es nuestro negocio, quiénes somos y qué hacemos. [cite: 228] [cite_start]Te impulsa y es un elemento clave para la construcción del futuro. [cite: 227, 241]</p></DialogContent></Dialog>
-            </div>
-            <div className="p-3 rounded-lg border text-center">
-              <strong className="text-lg">Valores</strong>
-              <p className="text-sm text-muted-foreground h-12">¿Cómo actuamos?</p>
-              [cite_start]<Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Valores</DialogTitle></DialogHeader><p>Definen cómo queremos que actúen y piensen los colaboradores. [cite: 234] [cite_start]Te orientan y son principios rectores de la cultura organizacional. [cite: 231, 242]</p></DialogContent></Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      ),
-    },
+    { id: "adn", title: "ADN Estratégico", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>ADN Estratégico</CardTitle></CardHeader><CardContent className="grid md:grid-cols-3 gap-4"><div className="p-3 rounded-lg border text-center"><strong className="text-lg">Visión</strong><p className="text-sm text-muted-foreground h-12">¿Hacia dónde vamos?</p><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Visión</DialogTitle></DialogHeader><p>Define qué queremos llegar a ser y hacia dónde vamos. Es donde aspiras estar y sirve de inspiración y orientación.</p></DialogContent></Dialog></div><div className="p-3 rounded-lg border text-center"><strong className="text-lg">Misión</strong><p className="text-sm text-muted-foreground h-12">¿Quiénes somos y qué hacemos?</p><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Misión</DialogTitle></DialogHeader><p>Define cuál es nuestro negocio, quiénes somos y qué hacemos. Te impulsa y es un elemento clave para la construcción del futuro.</p></DialogContent></Dialog></div><div className="p-3 rounded-lg border text-center"><strong className="text-lg">Valores</strong><p className="text-sm text-muted-foreground h-12">¿Cómo actuamos?</p><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Definición</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Valores</DialogTitle></DialogHeader><p>Definen cómo queremos que actúen y piensen los colaboradores. Te orientan y son principios rectores de la cultura organizacional.</p></DialogContent></Dialog></div></CardContent></Card>),},
     { id: "poll-adn", title: "Pregunta: ADN", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-adn" roomId={roomId} question="La pregunta '¿Quiénes somos?' corresponde a la..." options={["Visión", "Misión", "Valores"]} correctAnswerIndex={1} />),},
-    { id: "matriz-x", title: "Matriz X (interactiva)", content: <XMatrixCard /> },
-    { 
-      id: "cierre", 
-      title: "Cierre", 
-      content: (
-        <Card>
-          <CardHeader>
-            <CardTitle>Cierre</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Hoshin Kanri integra estrategia, ejecución y aprendizaje.</p>
-          </CardContent>
-        </Card>
-      ),
-    },
+    { id: "proceso-intro", title: "Proceso de Construcción Matriz X", content: (<Card><CardHeader><CardTitle>Proceso de Construcción de la Matriz X</CardTitle></CardHeader><CardContent><p className="text-lg">Ahora, vamos a detallar cada sección de la matriz antes de que construyas la tuya.</p></CardContent></Card>),},
+    { id: "proceso-resultados", title: "Paso 1: Resultados", content: (<Card><CardHeader><CardTitle>Paso 1: Resultados (¿Qué lograremos?)</CardTitle></CardHeader><CardContent><p>Son las metas financieras y no financieras más importantes de la compañía. Generalmente son determinadas por la dirección.</p><p className="mt-2 font-semibold">Ejemplos:</p><ul className="list-disc pl-5 mt-1"><li>Incrementar las ganancias en un 50%</li><li>Obtener la certificación de Industria Limpia</li></ul></CardContent></Card>),},
+    { id: "proceso-estrategias", title: "Paso 2: Estrategias", content: (<Card><CardHeader><CardTitle>Paso 2: Estrategias (¿Cómo lo lograremos?)</CardTitle></CardHeader><CardContent><p>Son entre 2 y 5 apuestas claras que definen cómo se competirá. Mencionan el costo, funcionalidad y calidad del producto o servicio.</p><p className="mt-2 font-semibold">Ejemplos:</p><ul className="list-disc pl-5 mt-1"><li>Convertirse en el productor de más bajo costo</li><li>Ser la compañía más innovadora</li></ul></CardContent></Card>),},
+    { id: "poll-proceso-1", title: "Pregunta: Proceso", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-proceso-1" roomId={roomId} question="Inmediatamente después de definir los 'Resultados', ¿qué elemento se debe establecer en la Matriz X?" options={["Las Acciones Tácticas", "Las Personas", "Las Estrategias"]} correctAnswerIndex={2} />),},
+    { id: "proceso-acciones", title: "Paso 3: Acciones Tácticas", content: (<Card><CardHeader><CardTitle>Paso 3: Acciones Tácticas (¿Qué proyectos haremos?)</CardTitle></CardHeader><CardContent><p>Son las iniciativas o proyectos de mejora más importantes. Frecuentemente involucran la introducción de nuevas tecnologías o metodologías.</p><p className="mt-2 font-semibold">Ejemplos:</p><ul className="list-disc pl-5 mt-1"><li>Implementar producción esbelta en todas las plantas de manufactura</li><li>Aplicar QFD en el lanzamiento del nuevo producto</li></ul></CardContent></Card>),},
+    { id: "matriz-x-interactiva", title: "Taller: Matriz X", content: <XMatrixCard /> },
+    { id: "cierre", title: "Cierre", content: (<Card><CardHeader><CardTitle>Cierre y Próximos Pasos</CardTitle></CardHeader><CardContent><p className="text-lg">Hoshin Kanri integra <strong>estrategia, ejecución y aprendizaje</strong>. La clave es el enfoque ('menos pero mejor') y la revisión disciplinada.</p></CardContent></Card>),},
   ];
 }
