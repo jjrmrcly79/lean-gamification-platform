@@ -132,7 +132,7 @@ export default function CcmxHoshinPresentation() {
           <section className="grid md:grid-cols-[minmax(0,1fr),380px] gap-0">
             <div className="min-h-[calc(100vh-70px)] grid place-items-center p-4">
               <motion.div key={slides[index].id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="w-full flex justify-center">
-                <div className="w-full max-w-5xl">{slides[index].content}</div>
+                <div className="w-full">{slides[index].content}</div>
               </motion.div>
             </div>
             <aside className="border-l p-3 hidden md:block">
