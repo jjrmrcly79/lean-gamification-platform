@@ -4,7 +4,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 // Imports para Pop-ups (Dialog)
 import {
   Dialog,
@@ -445,7 +450,82 @@ function buildSlides(logoSrc: string, roomId: string): Slide[] {
     { id: "poll-formula", title: "Pregunta: Fórmula del Éxito", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-formula" roomId={roomId} question="En la fórmula P.C. + P.C. = R.P.R., ¿qué significa la primera 'P.C.'?" options={["Procesos Capaces", "Personas Clave", "Personas Capaces", "Planes Concretos"]} correctAnswerIndex={2} />),},
     
     // --- Módulo 2: Contexto Empresarial ---
-    { id: "etapas-empresa", title: "Etapas en la Empresa", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Etapas en la Vida de una Empresa</CardTitle></CardHeader><CardContent className="space-y-3"><p>Cada etapa presenta retos y objetivos distintos.</p><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>1. Conceptualización o Inicio:</strong> Se genera la idea y se establecen los fundamentos.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapa 1: Conceptualización</DialogTitle></DialogHeader><p>Es la etapa en la que se genera la idea del negocio, se realiza la planificación, investigación de mercado y se establecen los fundamentos de la empresa. El principal reto es pasar de la <strong>incertidumbre</strong> (análisis) a la <strong>certeza</strong> (lanzamiento).</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>2. Lanzamiento:</strong> La empresa comienza sus operaciones oficialmente.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapa 2: Lanzamiento</DialogTitle></DialogHeader><p>La empresa comienza sus operaciones, con la puesta en marcha de productos o servicios. El reto es pasar de la <strong>inestabilidad</strong> (problemas iniciales) a la <strong>estabilidad</strong> (mejora y crecimiento).</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>3. Crecimiento y Consolidación:</strong> Aumento en ventas y optimización de procesos.</div><Dialog><DialogTrigger asChild><Button variant="outline" size="sm">Detalle</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Etapas 3 y 4: Crecimiento y Consolidación</DialogTitle></DialogHeader><p>La empresa experimenta aumento en ventas y expansión. Posteriormente, alcanza su máximo nivel de crecimiento, consolidando su presencia en el mercado y optimizando sus procesos.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong>4. Declive y Reinvención:</strong> Disminución en ventas que requiere una modernización.</div></div></CardContent></Card>),},
+    // ===== CÓDIGO COMPLETO PARA EL SLIDE "ETAPAS EN LA EMPRESA" =====
+
+{
+  id: "etapas-empresa",
+  title: "Etapas en la Empresa",
+  cognitiveLevel: "Recordar",
+  knowledgeType: "Conceptual",
+  content: (
+    <Card>
+      <CardHeader>
+        <CardTitle>Etapas en la Vida de una Empresa</CardTitle>
+        <p className="text-muted-foreground">
+          Cada etapa presenta retos y objetivos distintos. Haz clic en cada una para ver el detalle.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Accordion type="single" collapsible className="w-full">
+          {/* ETAPA 1 */}
+          <AccordionItem value="item-1">
+            <AccordionTrigger>1. Conceptualización o Inicio</AccordionTrigger>
+            <AccordionContent>
+              <p>Es la etapa en la que se genera la idea del negocio, se realiza la planificación, investigación de mercado y se establecen los fundamentos de la empresa.</p>
+              <div className="mt-3 border-t pt-3 space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Badge variant="destructive">Reto</Badge> <span>Incertidumbre: Análisis y Solución de problemas</span></div>
+                <div className="flex items-center gap-2"><Badge variant="secondary">Meta</Badge> <span>Certeza: Lanzamiento</span></div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          {/* ETAPA 2 */}
+          <AccordionItem value="item-2">
+            <AccordionTrigger>2. Lanzamiento</AccordionTrigger>
+            <AccordionContent>
+              <p>La empresa comienza sus operaciones oficialmente, con la puesta en marcha de productos o servicios y la introducción al mercado.</p>
+               <div className="mt-3 border-t pt-3 space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Badge variant="destructive">Reto</Badge> <span>Inestabilidad: Estabilización</span></div>
+                <div className="flex items-center gap-2"><Badge variant="secondary">Meta</Badge> <span>Estabilidad: Mejora y Crecimiento</span></div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          {/* ETAPA 3 */}
+          <AccordionItem value="item-3">
+            <AccordionTrigger>3. Crecimiento</AccordionTrigger>
+            <AccordionContent>
+              <p>La empresa experimenta aumento en ventas, expansión de mercado y fortalecimiento de su estructura y operaciones.</p>
+               <div className="mt-3 border-t pt-3 space-y-2 text-sm">
+                <div className="flex items-center gap-2"><Badge variant="destructive">Reto</Badge> <span>Inestabilidad: Estabilización</span></div>
+                <div className="flex items-center gap-2"><Badge variant="secondary">Meta</Badge> <span>Estabilidad: Mejora y Consolidación</span></div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          {/* ETAPA 4 */}
+          <AccordionItem value="item-4">
+            <AccordionTrigger>4. Consolidación</AccordionTrigger>
+            <AccordionContent>
+              <p>La empresa alcanza su máximo nivel de crecimiento, consolidando su presencia en el mercado y optimiza sus procesos para mantener la eficiencia.</p>
+            </AccordionContent>
+          </AccordionItem>
+          {/* ETAPA 5 */}
+          <AccordionItem value="item-5">
+            <AccordionTrigger>5. Declive</AccordionTrigger>
+            <AccordionContent>
+              <p>Sucede una disminución en ventas o en participación de mercado, a menudo debido a cambios en el mercado, competencia o tecnología obsoleta.</p>
+            </AccordionContent>
+          </AccordionItem>
+          {/* ETAPA 6 */}
+          <AccordionItem value="item-6">
+            <AccordionTrigger>6. Reinvención o Reinversión</AccordionTrigger>
+            <AccordionContent>
+              <p>La empresa busca activamente modernizarse, diversificar sus productos o servicios, o invertir en nuevas tecnologías para mantener su competitividad y comenzar un nuevo ciclo de crecimiento.</p>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </CardContent>
+    </Card>
+  ),
+},
     { id: "poll-etapas", title: "Pregunta: Etapas", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-etapas" roomId={roomId} question="¿Cuál es el principal reto a superar en la etapa de 'Lanzamiento'?" options={["De la incertidumbre a la certeza", "De la inestabilidad a la estabilidad", "Del crecimiento a la consolidación"]} correctAnswerIndex={1} />),},
     { id: "estructuras-gestion", title: "Estructuras de Gestión", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Estructuras de Gestión</CardTitle></CardHeader><CardContent><div className="grid md:grid-cols-2 gap-4"><div className="p-3 rounded-lg border"><strong>Gestión Estratégica:</strong> Enfoque en el largo plazo para alcanzar una ventaja competitiva.</div><div className="p-3 rounded-lg border"><strong>Gestión Operativa:</strong> Enfoque en los planes e implementaciones del corto plazo.</div><div className="p-3 rounded-lg border"><strong>Gestión Financiera/Admin:</strong> Enfoque en el control de los recursos en todos los procesos de la compañía.</div><div className="p-3 rounded-lg border bg-primary/10"><strong>Gestión de la Mejora:</strong> Enfoque en uso eficiente de los recursos durante el proceso productivo, integrando y mejorando las otras tres gestiones.</div></div></CardContent></Card>),},
     
