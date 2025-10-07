@@ -84,6 +84,8 @@
   --sidebar-ring: 240 5% 64.9%;
 }
 
+/* ===== PEGA ESTE BLOQUE COMPLETO PARA EL MODO OSCURO ===== */
+
 .dark {
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
@@ -106,16 +108,16 @@
   --ring: 240 4.9% 83.9%;
 
   /* Colores para Gráficos (Chart) - Modo Oscuro */
-  --chart-1: 22 95% 55%;   /* Naranja */
-  --chart-2: 180 75% 50%;  /* Cian */
-  --chart-3: 245 65% 60%;  /* Azul/Púrpura */
-  --chart-4: 90 85% 45%;   /* Verde */
-  --chart-5: 60 90% 55%;   /* Amarillo */
+  --chart-1: 22 95% 55%;
+  --chart-2: 180 75% 50%;
+  --chart-3: 245 65% 60%;
+  --chart-4: 90 85% 45%;
+  --chart-5: 60 90% 55%;
 
   /* Colores para la Barra Lateral (Sidebar) - Modo Oscuro */
   --sidebar: 240 10% 3.9%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-primary: 245 65% 60%; /* Usando un color de gráfico para el primario */
+  --sidebar-primary: 245 65% 60%;
   --sidebar-primary-foreground: 0 0% 98%;
   --sidebar-accent: 240 3.7% 15.9%;
   --sidebar-accent-foreground: 0 0% 98%;
