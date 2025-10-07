@@ -408,12 +408,11 @@ function XMatrixCard() {
   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleDownloadPDF = () => {
-    const input = pdfRef.current;
+    const input = pdfRef.current; // pdfRef debe estar conectado a tu <div>
     if (input) {
-      html2canvas(input, { scale: 2 }) // La escala mejora la resolución
+      html2canvas(input, { scale: 2 })
         .then((canvas) => {
           const imgData = canvas.toDataURL('image/png');
-          // El tamaño del PDF se ajustará al de la imagen
           const pdf = new jsPDF({
             orientation: 'landscape',
             unit: 'px',
@@ -422,6 +421,9 @@ function XMatrixCard() {
           pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
           pdf.save('matriz-hoshin-kanri.pdf');
         });
+    } else {
+      // Esto se mostrará en la consola si la referencia al div falla
+      console.error("Error: La referencia al elemento PDF es nula.");
     }
   };
   
