@@ -1,9 +1,9 @@
 // ===== CÓDIGO COMPLETO Y DEFINITIVO - page.tsx =====
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Accordion,
   AccordionContent,
@@ -31,6 +31,9 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
 import { RefreshCw } from 'lucide-react'; // Ícono para el ciclo
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
 
 
 // ---- Definiciones de Tipos ----
@@ -225,11 +228,13 @@ function DownloadFormDialog({ onExport }: { onExport: (details: { name: string; 
 
 // --- Componente 1 (Nuevo): Cuadrícula de Correlaciones ---
 function CorrelationGrid({
+  title, // <-- AÑADE ESTA LÍNEA
   rows,
   cols,
   correlations,
   setCorrelations,
 }: {
+  title: string; // <-- AÑADE ESTA LÍNEA
   rows: { id: string, text: string }[];
   cols: { id: string, text: string }[];
   correlations: Record<string, Record<string, number>>;
@@ -250,7 +255,11 @@ function CorrelationGrid({
   };
 
   return (
-    <div className="overflow-x-auto p-2 border rounded-lg bg-background">
+    // Añade el título aquí para que se muestre en la interfaz
+    <div className="overflow-x-auto p-2 border rounded-lg bg-background h-full flex flex-col">
+      {/* 2. AÑADE ESTA LÍNEA PARA MOSTRAR EL TÍTULO */}
+      <div className="font-semibold text-sm text-center mb-2">{title}</div>
+      
       <table className="w-full text-xs text-center border-collapse">
         <thead>
           <tr>
@@ -365,60 +374,131 @@ function Box({ title, items, setItems }: { title: string; items: { id: string, t
 
 // --- Componente 4 (Re-diseñado y CORREGIDO): La Matriz X Completa ---
 function XMatrixCard() {
-  // State for the main lists
-  const [estrategias, setEstrategias] = useState<{ id: string, text: string }[]>([{ id: 's1', text: 'Bajo costo' }]);
-  const [acciones, setAcciones] = useState<{ id: string, text: string }[]>([{ id: 'a1', text: 'Lean en plantas' }]);
-  const [procesos, setProcesos] = useState<{ id: string, text: string }[]>([{ id: 'p1', text: 'SMED < 10 min' }]);
-  const [resultados, setResultados] = useState<{ id: string, text: string }[]>([{ id: 'r1', text: 'Ganancias +50%' }]);
-  const [personas, setPersonas] = useState<{ id: string, text: string }[]>([{ id: 'pe1', text: 'J. García' }]);
+  // --- STATE MANAGEMENT ---
 
-  // State for correlations
-  const [estrategiasVsResultados, setEstrategiasVsResultados] = useState<Record<string, Record<string, number>>>({});
-  const [accionesVsEstrategias, setAccionesVsEstrategias] = useState<Record<string, Record<string, number>>>({});
-  const [procesosVsAcciones, setProcesosVsAcciones] = useState<Record<string, Record<string, number>>>({});
+  // 1. Estado para controlar el flujo paso a paso (de 0 a 5)
+  const [step, setStep] = useState(0);
+
+  // 2. Estado para almacenar los datos de cada cuadrante (esto los hace interactivos)
+  const [longTermObjectives, setLongTermObjectives] = useState([
+    { id: 'lt1', text: 'Lograr calidad de clase mundial (Malcolm Baldrige)' },
+  ]);
+  const [annualObjectives, setAnnualObjectives] = useState([
+    { id: 'an1', text: 'Crecer ingresos a $75M' },
+    { id: 'an2', text: 'Reducir desperdicios de proceso en 40%' },
+  ]);
+  const [priorities, setPriorities] = useState([
+    { id: 'p1', text: 'Aumentar compromiso del cliente en el diseño' },
+    { id: 'p2', text: 'Implementar metodologías de Excelencia' },
+  ]);
+  const [people, setPeople] = useState([
+    { id: 'pe1', text: 'Jim Gruber (VP Calidad)' },
+    { id: 'pe2', text: 'Dave Niles (VP Marketing)' },
+  ]);
+
+  // 3. Estado para las correlaciones
+  const [correlations, setCorrelations] = useState<Record<string, Record<string, number>>>({});
+
+  // Referencia al DIV que queremos convertir a PDF
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  // --- HANDLERS ---
+
+  const handleNext = () => setStep((s) => Math.min(s + 1, 5));
+  const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
+
+  const handleDownloadPDF = () => {
+    const input = pdfRef.current;
+    if (input) {
+      html2canvas(input, { scale: 2 }) // La escala mejora la resolución
+        .then((canvas) => {
+          const imgData = canvas.toDataURL('image/png');
+          // El tamaño del PDF se ajustará al de la imagen
+          const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
+          });
+          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+          pdf.save('matriz-hoshin-kanri.pdf');
+        });
+    }
+  };
   
-  // State for responsibilities
-  const [responsabilidades, setResponsabilidades] = useState<Record<string, Record<string, 'L' | 'M'>>>({});
+  // Variante de animación para la aparición de elementos
+  const fadeIn = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
+  };
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Matriz Hoshin Kanri (X)</CardTitle>
-        <p className="text-muted-foreground">Define los elementos y conecta las relaciones para alinear la estrategia de tu organización.</p>
+        <CardTitle>Taller Interactivo: Matriz Hoshin Kanri (X)</CardTitle>
+        <p className="text-muted-foreground">Construyamos juntos la matriz paso a paso. Añade y modifica los elementos según tu organización.</p>
       </CardHeader>
       <CardContent>
-        {/* --- CAMBIO: La cuadrícula ahora tiene 4 columnas para separar la sección de Responsabilidades --- */}
-        <div className="grid grid-cols-[3fr_1fr_3fr_3fr] grid-rows-[3fr_1fr_3fr] gap-4" style={{ minHeight: '700px' }}>
-          
-          {/* --- Columna 1 --- */}
-          <div className="col-start-1 row-start-1"><CorrelationGrid rows={acciones} cols={estrategias} correlations={accionesVsEstrategias} setCorrelations={setAccionesVsEstrategias} /></div>
-          <div className="col-start-1 row-start-2"><Box title="Estrategias (Oeste)" items={estrategias} setItems={setEstrategias} /></div>
-          <div className="col-start-1 row-start-3"><CorrelationGrid rows={estrategias} cols={resultados} correlations={estrategiasVsResultados} setCorrelations={setEstrategiasVsResultados} /></div>
-          
-          {/* --- Columna 2 --- */}
-          <div className="col-start-2 row-start-1"><Box title="Acciones Tácticas (Norte)" items={acciones} setItems={setAcciones} /></div>
-          <div className="col-start-2 row-start-2 flex items-center justify-center text-center p-2 border rounded-lg">
-            <h3 className="font-bold text-lg text-primary">Hoshin Kanri</h3>
-          </div>
-          <div className="col-start-2 row-start-3"><Box title="Resultados (Sur)" items={resultados} setItems={setResultados} /></div>
-          
-          {/* --- Columna 3 --- */}
-          <div className="col-start-3 row-start-1"><CorrelationGrid rows={procesos} cols={acciones} correlations={procesosVsAcciones} setCorrelations={setProcesosVsAcciones} /></div>
-          <div className="col-start-3 row-start-2"><Box title="Métricas (Este)" items={procesos} setItems={setProcesos} /></div>
-          {/* La esquina inferior derecha se deja vacía intencionalmente */}
+        {/* El div con la referencia 'pdfRef' es el que se exportará */}
+        <div ref={pdfRef} className="bg-background p-4">
+            <div className="grid grid-cols-3 grid-rows-3 gap-4" style={{ minHeight: '700px' }}>
+              
+              {/* Esquinas (Correlaciones) */}
+              <AnimatePresence>
+                {step >= 4 && (
+                  <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-1 row-start-1">
+                     <CorrelationGrid title="Estrategias vs Objetivos Anuales" rows={priorities} cols={annualObjectives} correlations={correlations} setCorrelations={setCorrelations} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {/* ... (Puedes añadir las otras 3 esquinas de correlación de la misma manera) ... */}
+              <div className="col-start-3 row-start-3"></div>
+              
+              {/* Cuadrantes Principales */}
+              <AnimatePresence>
+                {step >= 1 && (
+                  <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-1 row-start-2">
+                    <Box title="Objetivos de Avance (3-5 Años)" items={longTermObjectives} setItems={setLongTermObjectives} />
+                  </motion.div>
+                )}
+                {step >= 2 && (
+                  <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-2 row-start-1">
+                    <Box title="Objetivos Anuales" items={annualObjectives} setItems={setAnnualObjectives} />
+                  </motion.div>
+                )}
+                {step >= 3 && (
+                  <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-3 row-start-2">
+                    <Box title="Prioridades de Mejora" items={priorities} setItems={setPriorities} />
+                  </motion.div>
+                )}
+                 {step >= 5 && (
+                  <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-2 row-start-3">
+                    <Box title="Recursos y Responsables" items={people} setItems={setPeople} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-          {/* --- CAMBIO: Columna 4 dedicada a Personas y Responsabilidades --- */}
-          <div className="col-start-4 row-start-1"><ResponsibilityMatrix actions={acciones} people={personas} responsibilities={responsabilidades} setResponsabilidades={setResponsabilidades}/></div>
-          <div className="col-start-4 row-start-2"><Box title="Personas" items={personas} setItems={setPersonas} /></div>
-          <div className="col-start-4 row-start-3 flex flex-col justify-start p-2 border rounded-lg bg-muted/50">
-             <Card className="p-3 text-xs">
-                <p className="font-bold">Correlaciones:</p>
-                <p>⚫ = Fuerte | ⚪ = Apoyo</p>
-                <p className="mt-2 font-bold">Responsables:</p>
-                <p>L = Líder | M = Miembro</p>
-             </Card>
-          </div>
+              {/* Centro de la Matriz */}
+              <div className="col-start-2 row-start-2 flex items-center justify-center border-4 border-double p-4 text-center">
+                <AnimatePresence>
+                  {step >= 0 && (
+                     <motion.h3 variants={fadeIn} initial="hidden" animate="visible" className="font-bold text-lg text-primary">Target to Improve</motion.h3>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+        </div>
 
+        {/* Controles de Navegación y Descarga */}
+        <div className="mt-6 flex items-center justify-between border-t pt-4">
+          <div className="flex gap-2">
+            <Button onClick={handlePrev} disabled={step === 0} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Anterior</Button>
+            <Button onClick={handleNext} disabled={step === 5}><ArrowRight className="mr-2 h-4 w-4" /> Siguiente</Button>
+          </div>
+          <div className="text-sm text-muted-foreground">Paso {step + 1} de 6</div>
+          <Button onClick={handleDownloadPDF} variant="default" disabled={step < 5}>
+            <Download className="mr-2 h-4 w-4" />
+            Descargar PDF
+          </Button>
         </div>
       </CardContent>
     </Card>
