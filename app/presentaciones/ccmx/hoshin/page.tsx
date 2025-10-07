@@ -189,50 +189,43 @@ function PollComponent({ question, options, correctAnswerIndex, slideId, roomId 
   return (<Card><CardHeader><CardTitle>{question}</CardTitle></CardHeader><CardContent className="space-y-2">{options.map((option, index) => (<Button key={index} variant={votedIndex === index ? (index === correctAnswerIndex ? "default" : "destructive") : "outline"} className="w-full justify-start text-left h-auto py-2 whitespace-normal" onClick={() => handleVote(index)} disabled={votedIndex !== null}><div className="flex items-center w-full"><span>{option}</span>{votedIndex !== null && (<span className="ml-auto text-lg">{index === correctAnswerIndex ? '✅' : '❌'}</span>)}</div></Button>))}{votedIndex !== null && (<p className="text-sm text-muted-foreground pt-2">¡Gracias por tu respuesta!</p>)}</CardContent></Card>);
 }
 
-// ----- REEMPLAZA TU DownloadFormDialog ACTUAL CON ESTE CÓDIGO -----
-
 function DownloadFormDialog({ onExport, isEnabled }: { onExport: () => void; isEnabled: boolean; }) {
+  // ... (useState para los campos se queda igual) ...
   const supabase = useMemo(() => createClient(), []);
   const [isOpen, setIsOpen] = useState(false);
-  
-  // Estados para los campos del formulario
   const [nombre, setNombre] = useState("");
   const [puesto, setPuesto] = useState("");
   const [empresa, setEmpresa] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [comentario, setComentario] = useState("");
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    // Validación simple
     if (!nombre || !email || !empresa) {
       alert("Por favor, completa los campos obligatorios (Nombre, Empresa, Correo).");
       return;
     }
-
     setIsSubmitting(true);
+    console.log("Paso 1: Enviando datos a Supabase..."); // LOG DE DIAGNÓSTICO
     
-    // Envía los datos a Supabase
-    const { error } = await supabase.from('clientes').insert([
-      { nombre, puesto, empresa, email, telefono, comentario },
-    ]);
-
+    const { error } = await supabase.from('clientes').insert([{ nombre, puesto, empresa, email, telefono, comentario }]);
+    
     setIsSubmitting(false);
 
     if (error) {
       console.error("Error al guardar en Supabase:", error);
       alert("Hubo un error al guardar tus datos. Por favor, inténtalo de nuevo.");
     } else {
-      // Si todo sale bien, cierra el pop-up y ejecuta la descarga
+      console.log("Paso 2: Datos guardados en Supabase exitosamente. Procediendo a llamar onExport."); // LOG DE DIAGNÓSTICO
       setIsOpen(false);
       onExport(); 
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    // ... tu JSX para DownloadFormDialog se queda exactamente igual ...
+     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="default" disabled={!isEnabled}>
           <Download className="mr-2 h-4 w-4" />
@@ -415,7 +408,7 @@ function Box({ title, items, setItems }: { title: string; items: { id: string, t
 // ----- REEMPLAZA TU XMatrixCard ACTUAL CON ESTE NUEVO COMPONENTE -----
 
 function XMatrixCard() {
-  // --- STATE MANAGEMENT (Sin cambios) ---
+  // ... (todos tus useState se quedan igual) ...
   const [step, setStep] = useState(0);
   const [longTermObjectives, setLongTermObjectives] = useState([
     { id: 'lt1', text: 'Lograr calidad de clase mundial (Malcolm Baldrige)' },
@@ -433,47 +426,47 @@ function XMatrixCard() {
     { id: 'pe2', text: 'Dave Niles (VP Marketing)' },
   ]);
   const [correlations, setCorrelations] = useState<Record<string, Record<string, number>>>({});
-
-  // Referencia al DIV que queremos convertir a PDF
   const pdfRef = useRef<HTMLDivElement>(null);
-
-  // --- HANDLERS (Sin cambios) ---
   const handleNext = () => setStep((s) => Math.min(s + 1, 5));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
-  // --- FUNCIÓN MEJORADA PARA DESCARGAR PDF ---
   const handleDownloadPDF = () => {
+    console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG DE DIAGNÓSTICO
     const input = pdfRef.current;
+    
     if (input) {
-      html2canvas(input, {
-        scale: 2, // Mejora la resolución
-        backgroundColor: '#ffffff', // Fondo blanco para el PDF
-        useCORS: true,
-      }).then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'px',
-          format: [canvas.width, canvas.height],
+      console.log("Paso 4: El elemento para el PDF fue encontrado. Empezando html2canvas."); // LOG DE DIAGNÓSTICO
+      html2canvas(input, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+        .then((canvas) => {
+          console.log("Paso 5: Canvas creado exitosamente. Generando PDF."); // LOG DE DIAGNÓSTICO
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+          pdf.save('matriz-hoshin-kanri.pdf');
+          console.log("Paso 6: Descarga de PDF completada."); // LOG DE DIAGNÓSTICO
+        })
+        .catch(err => {
+          // AÑADIMOS UN .catch() PARA VER ERRORES DE RENDERIZADO
+          console.error("¡ERROR DE HTML2CANVAS!", err);
+          alert("Hubo un error al generar la imagen del PDF. Revisa la consola para más detalles.");
         });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save('matriz-hoshin-kanri.pdf');
-      });
+    } else {
+      console.error("Error Crítico: La referencia (pdfRef) al elemento del PDF es nula."); // LOG DE DIAGNÓSTICO
     }
   };
 
   const fadeIn = { hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } };
 
   return (
+    // ... tu JSX para XMatrixCard se queda exactamente igual ...
+    // Solo estamos cambiando la lógica de la función de arriba
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Taller Interactivo: Matriz Hoshin Kanri (X)</CardTitle>
         <p className="text-muted-foreground">Construyamos juntos la matriz. Añade y modifica los elementos según tu organización.</p>
       </CardHeader>
       <CardContent>
-        {/* --- 1. MATRIZ VISUAL INTERACTIVA (La que ve el usuario) --- */}
         <div className="grid grid-cols-3 grid-rows-3 gap-4" style={{ minHeight: '700px' }}>
-          {/* ... (el código de la matriz interactiva se queda igual) ... */}
            <AnimatePresence>
                 {step >= 4 && (
                   <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-1 row-start-1">
@@ -512,18 +505,12 @@ function XMatrixCard() {
                 </AnimatePresence>
               </div>
         </div>
-
-        {/* --- 2. LAYOUT OCULTO PARA EL PDF (Solo para la exportación) --- */}
-        {/* Usamos position: absolute y left: -9999px para ocultarlo visualmente sin afectar el renderizado */}
         <div className="absolute -left-[9999px] top-auto" style={{ width: '1200px' }}>
           <div ref={pdfRef} className="bg-white p-8 text-black">
-            {/* Encabezado del PDF */}
             <div className="mb-6 flex items-center justify-between border-b-2 pb-4">
               <h1 className="text-3xl font-bold text-gray-800">Matriz de Planificación Hoshin Kanri</h1>
               <Image src="/logo.png" alt="Logo de la Empresa" width={100} height={100} />
             </div>
-            
-            {/* Contenido de la Matriz en un layout de tabla (mucho más robusto para PDF) */}
             <table className="w-full border-collapse text-xs">
               <tbody>
                 <tr>
@@ -557,22 +544,19 @@ function XMatrixCard() {
             </table>
           </div>
         </div>
-
-        {/* --- 3. CONTROLES DE NAVEGACIÓN Y DESCARGA (Modificados) --- */}
         <div className="mt-6 flex items-center justify-between border-t pt-4">
           <div className="flex gap-2">
             <Button onClick={handlePrev} disabled={step === 0} variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Anterior</Button>
             <Button onClick={handleNext} disabled={step === 5}><ArrowRight className="mr-2 h-4 w-4" /> Siguiente</Button>
           </div>
           <div className="text-sm text-muted-foreground">Paso {step + 1} de 6</div>
-          
-          {/* El botón ahora abre el Dialog y pasa la función de descarga */}
           <DownloadFormDialog onExport={handleDownloadPDF} isEnabled={step === 5} />
         </div>
       </CardContent>
     </Card>
   );
 }
+
 // ===== COMPONENTE PARA EL DIAGRAMA INTERACTIVO =====
 // Puedes colocar este componente al final de tu archivo page.tsx, fuera de la función buildSlides.
 
