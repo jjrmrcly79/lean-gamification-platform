@@ -447,9 +447,9 @@ const InteractiveCycleDiagram = () => {
 
   // Define las posiciones: 0=Activa (arriba), 1=Siguiente (abajo-derecha), 2=Anterior (abajo-izquierda)
   const positions = [
-    { y: '-85%', x: '0%', scale: 1.05, opacity: 1, zIndex: 10 },
-    { y: '70%', x: '60%', scale: 0.8, opacity: 0.5, zIndex: 5 },
-    { y: '70%', x: '-60%', scale: 0.8, opacity: 0.5, zIndex: 5 },
+   { y: '-95%', x: '0%', scale: 1.05, opacity: 1, zIndex: 10 },
+    { y: '80%', x: '70%', scale: 0.8, opacity: 0.5, zIndex: 5 },
+    { y: '80%', x: '-70%', scale: 0.8, opacity: 0.5, zIndex: 5 },
   ];
 
   const handleCycle = () => {
