@@ -203,3 +203,23 @@ body {
   opacity: 1;
   margin-top: 0.75rem; /* 12px */
 }
+/* -------- Piel PDF: fuerza colores/bordes sólidos al exportar -------- */
+.pdf-export * {
+  box-shadow: none !important;
+  filter: none !important;
+  background-image: none !important;
+}
+
+.pdf-export .hc-border,
+.pdf-export table, 
+.pdf-export tr, 
+.pdf-export td, 
+.pdf-export th, 
+.pdf-export div.hc-cell {
+  border: 1px solid #111 !important;
+}
+
+/* Evita cortes raros entre páginas */
+@media print {
+  .avoid-break { break-inside: avoid; }
+}

@@ -1,7 +1,7 @@
 // ===== CÓDIGO COMPLETO Y DEFINITIVO - page.tsx =====
 "use client";
 
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -18,8 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Componentes de shadcn/ui
+import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +33,7 @@ import { RefreshCw } from 'lucide-react'; // Ícono para el ciclo
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
+
 
 
 
@@ -430,30 +430,42 @@ function XMatrixCard() {
   const handleNext = () => setStep((s) => Math.min(s + 1, 5));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
-  const handleDownloadPDF = () => {
-    console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG DE DIAGNÓSTICO
-    const input = pdfRef.current;
-    
-    if (input) {
-      console.log("Paso 4: El elemento para el PDF fue encontrado. Empezando html2canvas."); // LOG DE DIAGNÓSTICO
-      html2canvas(input, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
-        .then((canvas) => {
-          console.log("Paso 5: Canvas creado exitosamente. Generando PDF."); // LOG DE DIAGNÓSTICO
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
-          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-          pdf.save('matriz-hoshin-kanri.pdf');
-          console.log("Paso 6: Descarga de PDF completada."); // LOG DE DIAGNÓSTICO
-        })
-        .catch(err => {
-          // AÑADIMOS UN .catch() PARA VER ERRORES DE RENDERIZADO
-          console.error("¡ERROR DE HTML2CANVAS!", err);
-          alert("Hubo un error al generar la imagen del PDF. Revisa la consola para más detalles.");
-        });
-    } else {
-      console.error("Error Crítico: La referencia (pdfRef) al elemento del PDF es nula."); // LOG DE DIAGNÓSTICO
-    }
+  const handleDownloadPDF = async () => {
+  console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG
+
+  const el = pdfRef.current ?? document.getElementById("hoshin-matrix");
+  if (!el) {
+    console.error("Error Crítico: No encontré el contenedor a exportar.");
+    alert("No se encontró el contenedor para el PDF.");
+    return;
+  }
+
+  // 1) Piel PDF para asegurar colores/bordes sólidos
+  const root = document.documentElement;
+  root.classList.add("pdf-export");
+
+  // 2) Opciones tipadas como tupla (TS exige longitud fija)
+  const opt = {
+    margin: [0.4, 0.4, 0.4, 0.4] as [number, number, number, number],
+    filename: "matriz-hoshin-kanri.pdf",
+    image: { type: "jpeg" as const, quality: 1 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "in" as const, format: "a4", orientation: "landscape" as const },
+    pagebreak: { mode: ["css", "legacy"] as ("css" | "legacy" | "avoid-all")[] },
   };
+
+  try {
+    console.log("Paso 4: Generando PDF con html2pdf...");
+    await html2pdf().set(opt).from(el).save();
+    console.log("Paso 5: Descarga de PDF completada."); // LOG
+  } catch (err) {
+    console.error("¡ERROR AL EXPORTAR PDF!", err);
+    alert("Hubo un error al generar el PDF. Revisa la consola para más detalles.");
+  } finally {
+    root.classList.remove("pdf-export");
+  }
+};
+
 
   const fadeIn = { hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } };
 
@@ -789,40 +801,47 @@ function buildSlides(logoSrc: string, roomId: string): Slide[] {
 function DownloadFormDialog({ onExport, isEnabled }: { onExport: () => void; isEnabled: boolean; }) {
   const supabase = useMemo(() => createClient(), []);
   const [isOpen, setIsOpen] = useState(false);
-  
-  // Estados para los campos del formulario
+
+  // Campos del formulario
   const [nombre, setNombre] = useState("");
   const [puesto, setPuesto] = useState("");
   const [empresa, setEmpresa] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [comentario, setComentario] = useState("");
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    // Validación simple
     if (!nombre || !email || !empresa) {
       alert("Por favor, completa los campos obligatorios (Nombre, Empresa, Correo).");
       return;
     }
 
-    setIsSubmitting(true);
-    
-    // Envía los datos a Supabase
-    const { error } = await supabase.from('clientes').insert([
-      { nombre, puesto, empresa, email, telefono, comentario },
-    ]);
+    try {
+      setIsSubmitting(true);
+      console.log("Paso 1: Enviando datos a Supabase...");
 
-    setIsSubmitting(false);
+      const { error } = await supabase
+        .from("clientes")
+        .insert([{ nombre, puesto, empresa, email, telefono, comentario }]);
 
-    if (error) {
-      console.error("Error al guardar en Supabase:", error);
-      alert("Hubo un error al guardar tus datos. Por favor, inténtalo de nuevo.");
-    } else {
-      // Si todo sale bien, cierra el pop-up y ejecuta la descarga
+      if (error) {
+        console.error("Error al guardar en Supabase:", error);
+        alert("Hubo un error al guardar tus datos. Intenta de nuevo.");
+        return;
+      }
+
+      console.log("Paso 2: Datos guardados. Procediendo a exportar PDF...");
       setIsOpen(false);
-      onExport(); 
+
+      // Asegura un frame para que cierre el diálogo y el DOM se estabilice
+      await new Promise(requestAnimationFrame);
+
+      // Dispara la exportación que viene de XMatrixCard
+      onExport();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -837,8 +856,11 @@ function DownloadFormDialog({ onExport, isEnabled }: { onExport: () => void; isE
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Completa tus datos para descargar</DialogTitle>
-          <p className="text-sm text-muted-foreground">Tu Matriz Hoshin Kanri personalizada está lista.</p>
+          <p className="text-sm text-muted-foreground">
+            Tu Matriz Hoshin Kanri personalizada está lista.
+          </p>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <Input placeholder="Nombre Completo *" value={nombre} onChange={(e) => setNombre(e.target.value)} />
           <Input placeholder="Puesto" value={puesto} onChange={(e) => setPuesto(e.target.value)} />
@@ -846,6 +868,7 @@ function DownloadFormDialog({ onExport, isEnabled }: { onExport: () => void; isE
           <Input placeholder="Correo Electrónico *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Input placeholder="Teléfono" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
           <Input placeholder="Comentario (opcional)" value={comentario} onChange={(e) => setComentario(e.target.value)} />
+
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Guardando..." : "Guardar y Descargar"}
           </Button>
@@ -854,4 +877,5 @@ function DownloadFormDialog({ onExport, isEnabled }: { onExport: () => void; isE
     </Dialog>
   );
 }
+
 }
