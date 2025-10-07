@@ -30,6 +30,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
+import { RefreshCw } from 'lucide-react'; // Ícono para el ciclo
+
+
 // ---- Definiciones de Tipos ----
 interface Slide {
   id: string;
@@ -421,6 +424,70 @@ function XMatrixCard() {
     </Card>
   );
 }
+// ===== COMPONENTE PARA EL DIAGRAMA INTERACTIVO =====
+// Puedes colocar este componente al final de tu archivo page.tsx, fuera de la función buildSlides.
+
+const InteractiveCycleDiagram = () => {
+  const [activeStep, setActiveStep] = useState(0);
+
+  const cycleData = [
+    {
+      title: "1. Gestión Estratégica",
+      description: "Enfoque en el largo plazo para alcanzar una ventaja competitiva.",
+    },
+    {
+      title: "2. Gestión Operativa",
+      description: "Enfoque en los planes e implementaciones del corto plazo.",
+    },
+    {
+      title: "3. Gestión Financiera/Admin",
+      description: "Enfoque en el control de los recursos en todos los procesos.",
+    },
+  ];
+
+  // Define las posiciones: 0=Activa (arriba), 1=Siguiente (abajo-derecha), 2=Anterior (abajo-izquierda)
+  const positions = [
+    { y: '-85%', x: '0%', scale: 1.05, opacity: 1, zIndex: 10 },
+    { y: '70%', x: '60%', scale: 0.8, opacity: 0.5, zIndex: 5 },
+    { y: '70%', x: '-60%', scale: 0.8, opacity: 0.5, zIndex: 5 },
+  ];
+
+  const handleCycle = () => {
+    setActiveStep((prev) => (prev + 1) % 3);
+  };
+
+  return (
+    <div className="relative flex h-[400px] w-full items-center justify-center">
+      {/* BASE: Gestión de la Mejora (en el centro y detrás) */}
+      <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-primary bg-primary/10 p-4 text-center">
+        <h3 className="font-bold text-primary">Gestión de la Mejora</h3>
+        <p className="text-xs text-primary/80">La base que integra y potencia el ciclo.</p>
+      </div>
+
+      {/* CICLO: Los 3 elementos que rotan */}
+      {cycleData.map((item, index) => (
+        <motion.div
+          key={item.title}
+          className="absolute flex w-64 cursor-pointer flex-col rounded-lg border bg-background p-4 text-center shadow-lg"
+          // La lógica matemática calcula la posición correcta para cada elemento en la rotación
+          animate={positions[(index - activeStep + 3) % 3]}
+          transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+          onClick={handleCycle}
+        >
+          <strong className="block">{item.title}</strong>
+          <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+        </motion.div>
+      ))}
+      
+       {/* BOTÓN: Para controlar el ciclo */}
+       <div className="absolute bottom-0 z-20">
+         <Button onClick={handleCycle} size="icon" variant="outline" className="rounded-full">
+            <RefreshCw className="h-4 w-4" />
+         </Button>
+       </div>
+    </div>
+  );
+};
 
 
 // =================================================
@@ -527,7 +594,11 @@ function buildSlides(logoSrc: string, roomId: string): Slide[] {
   ),
 },
     { id: "poll-etapas", title: "Pregunta: Etapas", cognitiveLevel: "Comprender", knowledgeType: "Conceptual", content: (<PollComponent slideId="poll-etapas" roomId={roomId} question="¿Cuál es el principal reto a superar en la etapa de 'Lanzamiento'?" options={["De la incertidumbre a la certeza", "De la inestabilidad a la estabilidad", "Del crecimiento a la consolidación"]} correctAnswerIndex={1} />),},
-    {
+
+
+// ===== CÓDIGO COMPLETO PARA EL SLIDE "ESTRUCTURAS DE GESTIÓN" =====
+
+{
   id: "estructuras-gestion",
   title: "Estructuras de Gestión",
   cognitiveLevel: "Recordar",
@@ -535,54 +606,20 @@ function buildSlides(logoSrc: string, roomId: string): Slide[] {
   content: (
     <Card>
       <CardHeader>
-        <CardTitle>Estructuras de Gestión Integradas</CardTitle>
+        <CardTitle>El Ciclo de Gestión Integrada</CardTitle>
         <p className="text-muted-foreground">
-          La Gestión de la Mejora no es una estructura aislada, sino la base que integra y potencia a todas las demás.
+          Un ciclo continuo de estrategia, operación y control, todo fundamentado en la mejora continua.
         </p>
       </CardHeader>
       <CardContent>
-        {/* Contenedor principal para el diagrama */}
-        <div className="relative flex min-h-[350px] w-full items-center justify-center p-4">
-          
-          {/* Capa de Fondo: Gestión de la Mejora */}
-          <div className="absolute inset-0 z-0 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/10 p-6 text-center">
-            <h3 className="text-xl font-bold text-primary">Gestión de la Mejora</h3>
-            <p className="max-w-xs text-sm text-primary/80">
-              Enfoque en el uso eficiente de los recursos, integrando y mejorando las otras tres gestiones.
-            </p>
-          </div>
-
-          {/* Capas Superiores: Las otras 3 gestiones */}
-          {/* Usamos un contenedor relativo con z-10 para que flote por encima */}
-          <div className="relative z-10 grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
-            
-            <div className="rounded-lg border bg-background p-4 shadow-md">
-              <strong className="block text-center">Gestión Estratégica</strong>
-              <p className="mt-1 text-center text-sm text-muted-foreground">
-                Enfoque en el largo plazo para alcanzar una ventaja competitiva.
-              </p>
-            </div>
-            
-            <div className="rounded-lg border bg-background p-4 shadow-md">
-              <strong className="block text-center">Gestión Operativa</strong>
-              <p className="mt-1 text-center text-sm text-muted-foreground">
-                Enfoque en los planes e implementaciones del corto plazo.
-              </p>
-            </div>
-
-            <div className="rounded-lg border bg-background p-4 shadow-md">
-              <strong className="block text-center">Gestión Financiera/Admin</strong>
-              <p className="mt-1 text-center text-sm text-muted-foreground">
-                Enfoque en el control de los recursos en todos los procesos.
-              </p>
-            </div>
-
-          </div>
-        </div>
+        {/* Usamos un componente interno para manejar el estado de la animación */}
+        <InteractiveCycleDiagram />
       </CardContent>
     </Card>
   ),
 },
+
+
     
     // --- Módulo 3: Hoshin Kanri en Profundidad ---
     { id: "jerarquia", title: "Jerarquía Estratégica", cognitiveLevel: "Recordar", knowledgeType: "Conceptual", content: (<Card><CardHeader><CardTitle>Jerarquía Estratégica</CardTitle></CardHeader><CardContent className="space-y-4"><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">1. Corporativa</strong><p className="text-sm text-muted-foreground">Define el ADN estratégico a nivel corporativo.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Corporativo</DialogTitle></DialogHeader><p>Inicia el proceso definiendo el ADN estratégico a nivel corporativo. Se enfoca en las expectativas de crecimiento, impacto, reconocimiento, etc.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">2. De Negocio</strong><p className="text-sm text-muted-foreground">Define estrategias por unidad de negocio.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel de Negocio</DialogTitle></DialogHeader><p>Los líderes de la planeación por negocio definen las estrategias, indicadores o acciones a tomar para contribuir a las metas corporativas.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">3. Funcional</strong><p className="text-sm text-muted-foreground">Áreas (Finanzas, MKT) que habilitan las metas.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Funcional</DialogTitle></DialogHeader><p>Según las áreas funcionales que tenga la organización, cada una se suma en su área de dominio para asegurar que los negocios logren sus objetivos.</p></DialogContent></Dialog></div><div className="flex items-center justify-between p-3 rounded-lg border"><div><strong className="text-lg">4. Operativa</strong><p className="text-sm text-muted-foreground">Asegura la correcta operación del core business.</p></div><Dialog><DialogTrigger asChild><Button variant="outline">Ver más</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Nivel Operativo</DialogTitle></DialogHeader><p>En ciertas ocasiones las empresas son tan grandes que requieren un cuarto nivel, el cual asegura una correcta operación dentro del core business o de una gran área funcional.</p></DialogContent></Dialog></div></CardContent></Card>),},
