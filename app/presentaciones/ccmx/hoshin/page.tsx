@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,10 +28,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase-client";
 
-import { RefreshCw } from 'lucide-react'; // Ícono para el ciclo
+import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
+import html2pdf from "html2pdf.js";
 
 
 
@@ -431,7 +431,8 @@ function XMatrixCard() {
   const handlePrev = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleDownloadPDF = async () => {
-  console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG
+  const { default: html2pdf } = await import("html2pdf.js");
+    console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG
 
   const el = pdfRef.current ?? document.getElementById("hoshin-matrix");
   if (!el) {
