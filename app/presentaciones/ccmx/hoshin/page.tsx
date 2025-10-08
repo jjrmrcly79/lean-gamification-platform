@@ -32,7 +32,7 @@ import { RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
-import html2pdf from "html2pdf.js";
+
 
 
 
@@ -432,6 +432,7 @@ function XMatrixCard() {
 
   const handleDownloadPDF = async () => {
   const { default: html2pdf } = await import("html2pdf.js");
+
     console.log("Paso 3: handleDownloadPDF ha sido llamada."); // LOG
 
   const el = pdfRef.current ?? document.getElementById("hoshin-matrix");
