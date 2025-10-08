@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useCallback } from "react";
-// @ts-ignore – la lib no trae tipos ESM completos
-import html2pdf from "html2pdf.js";
+
 
 type Props = {
   fileName?: string;
@@ -32,7 +31,8 @@ export default function HoshinMatrixExport({ fileName = "Hoshin-Matrix.pdf" }: P
 
 
     try {
-      // 3) Generar el PDF a partir del contenedor
+      const { default: html2pdf } = await import("html2pdf.js");
+        // 3) Generar el PDF a partir del contenedor
       await html2pdf().set(opt).from(el).save();
     } finally {
       // 4) Quitar piel PDF
