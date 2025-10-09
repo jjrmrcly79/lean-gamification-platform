@@ -606,10 +606,10 @@ const InteractiveCycleDiagram = () => {
   return (
     <div className="relative flex h-[400px] w-full items-center justify-center">
   {/* BASE: Gestión de la Mejora (en el centro y detrás) */}
-  <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center ...">
-  <h3 className="font-bold text-slate-100">Gestión de la Mejora</h3>
-  <p className="text-xs text-slate-300">La base que integra y potencia el ciclo.</p>
-</div>
+  <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-white/50 bg-background/20 p-4 text-center backdrop-blur-md">
+    <h3 className="font-bold text-slate-100">Gestión de la Mejora</h3>
+    <p className="text-xs text-slate-300">La base que integra y potencia el ciclo.</p>
+  </div>
 
       {/* CICLO: Los 3 elementos que rotan */}
       {cycleData.map((item, index) => (
