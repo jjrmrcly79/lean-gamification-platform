@@ -492,22 +492,22 @@ function XMatrixCard() {
               <AnimatePresence>
                 {step >= 1 && (
                   <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-1 row-start-2">
-                    <Box title="Objetivos de Avance (3-5 Años)" items={longTermObjectives} setItems={setLongTermObjectives} />
+                    <Box title="Estrategias" items={longTermObjectives} setItems={setLongTermObjectives} />
                   </motion.div>
                 )}
                 {step >= 2 && (
                   <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-2 row-start-1">
-                    <Box title="Objetivos Anuales" items={annualObjectives} setItems={setAnnualObjectives} />
+                    <Box title="Acciones Tácticas" items={annualObjectives} setItems={setAnnualObjectives} />
                   </motion.div>
                 )}
                 {step >= 3 && (
                   <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-3 row-start-2">
-                    <Box title="Prioridades de Mejora" items={priorities} setItems={setPriorities} />
+                    <Box title="Desempeño de Procesos" items={priorities} setItems={setPriorities} />
                   </motion.div>
                 )}
                  {step >= 5 && (
                   <motion.div variants={fadeIn} initial="hidden" animate="visible" className="col-start-2 row-start-3">
-                    <Box title="Recursos y Responsables" items={people} setItems={setPeople} />
+                    <Box title="Resultados" items={people} setItems={setPeople} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -605,11 +605,11 @@ const InteractiveCycleDiagram = () => {
 
   return (
     <div className="relative flex h-[400px] w-full items-center justify-center">
-      {/* BASE: Gestión de la Mejora (en el centro y detrás) */}
-      <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-primary bg-primary/10 p-4 text-center">
-        <h3 className="font-bold text-primary">Gestión de la Mejora</h3>
-        <p className="text-xs text-primary/80">La base que integra y potencia el ciclo.</p>
-      </div>
+  {/* BASE: Gestión de la Mejora (en el centro y detrás) */}
+  <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-primary bg-primary/10 p-4 text-center backdrop-blur-sm">
+    <h3 className="font-bold text-primary">Gestión de la Mejora</h3>
+    <p className="text-xs text-primary/80">La base que integra y potencia el ciclo.</p>
+  </div>
 
       {/* CICLO: Los 3 elementos que rotan */}
       {cycleData.map((item, index) => (
