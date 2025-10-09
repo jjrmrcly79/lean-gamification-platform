@@ -592,11 +592,10 @@ const InteractiveCycleDiagram = () => {
     },
   ];
 
-  // Define las posiciones: 0=Activa (arriba), 1=Siguiente (abajo-derecha), 2=Anterior (abajo-izquierda)
   const positions = [
-   { y: '-95%', x: '0%', scale: 1.05, opacity: 1, zIndex: 10 },
-    { y: '80%', x: '70%', scale: 0.8, opacity: 0.5, zIndex: 5 },
-    { y: '80%', x: '-70%', scale: 0.8, opacity: 0.5, zIndex: 5 },
+    { y: '-95%', x: '0%', scale: 1.05, opacity: 1, zIndex: 10 },
+    { y: '80%', x: '70%', scale: 0.8, opacity: 0.7, zIndex: 5 },
+    { y: '80%', x: '-70%', scale: 0.8, opacity: 0.7, zIndex: 5 },
   ];
 
   const handleCycle = () => {
@@ -605,23 +604,29 @@ const InteractiveCycleDiagram = () => {
 
   return (
     <div className="relative flex h-[400px] w-full items-center justify-center">
-  {/* BASE: Gestión de la Mejora (en el centro y detrás) */}
-  <div className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-white/50 bg-background/20 p-4 text-center backdrop-blur-md">
-    <h3 className="font-bold text-slate-100">Gestión de la Mejora</h3>
-    <p className="text-xs text-slate-300">La base que integra y potencia el ciclo.</p>
-  </div>
 
-      {/* CICLO: Los 3 elementos que rotan */}
+      {/* BASE: Círculo central con estilos para modo claro y oscuro */}
+      <div 
+        className="absolute z-0 flex h-48 w-48 flex-col items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white/50 p-4 text-center backdrop-blur-md dark:border-white/40 dark:bg-slate-900/30"
+      >
+        <h3 className="font-bold text-slate-700 dark:text-slate-100">
+          Gestión de la Mejora
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-300">
+          La base que integra y potencia el ciclo.
+        </p>
+      </div>
+
+      {/* CICLO: Los 3 elementos que rotan, ahora también con estilos adaptativos */}
       {cycleData.map((item, index) => (
         <motion.div
           key={item.title}
-          className="absolute flex w-64 cursor-pointer flex-col rounded-lg border bg-background p-4 text-center shadow-lg"
-          // La lógica matemática calcula la posición correcta para cada elemento en la rotación
+          className="absolute flex w-64 cursor-pointer flex-col rounded-lg border border-slate-200 bg-white/80 p-4 text-center shadow-lg backdrop-blur-sm dark:border-white/20 dark:bg-slate-900/50"
           animate={positions[(index - activeStep + 3) % 3]}
           transition={{ type: 'spring', stiffness: 120, damping: 20 }}
           onClick={handleCycle}
         >
-          <strong className="block">{item.title}</strong>
+          <strong className="block text-slate-800 dark:text-slate-100">{item.title}</strong>
           <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
         </motion.div>
       ))}
@@ -635,6 +640,10 @@ const InteractiveCycleDiagram = () => {
     </div>
   );
 };
+
+export { InteractiveCycleDiagram };
+// Or, if the component is defined in the same file:
+// export const InteractiveCycleDiagram = () => { ... };
 
 
 // =================================================
