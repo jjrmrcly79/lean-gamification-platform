@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import React, { useEffect, useRef } from "react";
 import {
   Chart,
@@ -8,22 +10,25 @@ import {
   Legend,
   PointElement,
   BubbleController,
+  DoughnutController,
   CategoryScale,
   LinearScale,
   Title,
 } from "chart.js";
-import type { TooltipItem } from "chart.js"
-// Registros necesarios de Chart.js
+
+// ✅ Registra todos los controladores y elementos que usas
 Chart.register(
   ArcElement,
   Tooltip,
   Legend,
   PointElement,
   BubbleController,
+  DoughnutController,
   CategoryScale,
   LinearScale,
   Title
 );
+
 
 export default function Page() {
   const importRef = useRef<HTMLCanvasElement | null>(null);
