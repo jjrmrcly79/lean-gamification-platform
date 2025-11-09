@@ -377,7 +377,34 @@ export default function Page() {
             <FlowBox icon="📥" title="4. Neodata ERP" note='Importación oficial' strong='"Pegar desde Portapapeles"' />
           </div>
         </section>
+        {/* Xmind */}
+        <section
+  id="xmind-diagram"
+  className="mb-16 bg-white p-8 rounded-xl shadow-md border border-gray-100"
+>
+  <h2
+    className="text-3xl font-bold text-center mb-8"
+    style={{ color: "var(--bg-dark)" }}
+  >
+    Diagrama de Flujo: Integración Neodata
+  </h2>
 
+  <div className="w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
+    <iframe
+      src="https://app.xmind.com/share/KAJs5dww"
+      title="Diagrama de Flujo Neodata"
+      className="w-full h-full border-0"
+      allowFullScreen
+    ></iframe>
+  </div>
+
+  <p className="text-center text-gray-600 mt-4 text-sm">
+    Puedes explorar el mapa completo directamente desde la plataforma XMind.
+  </p>
+</section>
+
+                    
+                
         {/* Gráficas */}
         <section id="charts" className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-12" style={{ color: "var(--bg-dark)" }}>
