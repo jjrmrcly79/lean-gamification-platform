@@ -223,3 +223,19 @@ body {
 @media print {
   .avoid-break { break-inside: avoid; }
 }
+:root{
+  --bg-dark:#2E2E2E;
+  --bg-light:#F8F9FA;
+  --primary:#D4AF37;
+  --accent-1:#C8553D;
+  --accent-2:#A93226;
+  --success:#7C986C;
+  --text-light:#FFFFFF;
+  --text-dark:#333333;
+}
+body{ background-color:var(--bg-light); color:var(--text-dark); }
+.chart-container{ position:relative; width:100%; max-width:600px; margin-left:auto; margin-right:auto; height:350px; max-height:450px;}
+@media (min-width:768px){ .chart-container{ height:450px; max-height:500px; } }
+.flow-arrow{ display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:var(--primary); margin:0 1rem; transform:rotate(90deg);}
+@media (min-width:768px){ .flow-arrow{ transform:rotate(0deg); } }
+.false-positive-line{ width:90%; height:3px; background:var(--accent-1); transform:rotate(-10deg) translateY(1rem); position:absolute; left:5%; opacity:.7;}
