@@ -12,7 +12,7 @@ import {
   LinearScale,
   Title,
 } from "chart.js";
-
+import type { TooltipItem } from "chart.js"
 // Registros necesarios de Chart.js
 Chart.register(
   ArcElement,
