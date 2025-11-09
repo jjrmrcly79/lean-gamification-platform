@@ -377,31 +377,40 @@ export default function Page() {
             <FlowBox icon="📥" title="4. Neodata ERP" note='Importación oficial' strong='"Pegar desde Portapapeles"' />
           </div>
         </section>
-        {/* Xmind */}
         <section
   id="xmind-diagram"
-  className="mb-16 bg-white p-8 rounded-xl shadow-md border border-gray-100"
+  className="mb-16 bg-white p-8 rounded-xl shadow-md border border-gray-100 text-center"
 >
   <h2
-    className="text-3xl font-bold text-center mb-8"
+    className="text-3xl font-bold text-center mb-6"
     style={{ color: "var(--bg-dark)" }}
   >
     Diagrama de Flujo: Integración Neodata
   </h2>
 
-  <div className="w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
-    <iframe
-      src="https://app.xmind.com/share/KAJs5dww"
-      title="Diagrama de Flujo Neodata"
-      className="w-full h-full border-0"
-      allowFullScreen
-    ></iframe>
-  </div>
+  <p className="text-gray-700 mb-6">
+    Consulta el flujo completo de integración directamente en XMind Share.
+  </p>
 
-  <p className="text-center text-gray-600 mt-4 text-sm">
-    Puedes explorar el mapa completo directamente desde la plataforma XMind.
+  <a
+    href="https://app.xmind.com/share/KAJs5dww"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block px-8 py-3 rounded-full font-semibold transition-all duration-200"
+    style={{
+      backgroundColor: "var(--primary)",
+      color: "var(--bg-dark)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+    }}
+  >
+    🌐 Abrir Diagrama en XMind
+  </a>
+
+  <p className="text-gray-500 text-sm mt-4">
+    (El visor integrado no está disponible por políticas de XMind)
   </p>
 </section>
+
 
                     
                 
