@@ -202,6 +202,35 @@ export type Database = {
           },
         ]
       }
+      interesados_prounity: {
+  Row: {
+    id: string;
+    nombre: string | null;
+    empresa: string | null;
+    cargo: string | null;
+    telefono: string | null;
+    email: string | null;
+    mensaje: string | null;
+    created_at: string | null;
+  };
+  Insert: {
+    nombre?: string | null;
+    empresa?: string | null;
+    cargo?: string | null;
+    telefono?: string | null;
+    email?: string | null;
+    mensaje?: string | null;
+  };
+  Update: {
+    nombre?: string | null;
+    empresa?: string | null;
+    cargo?: string | null;
+    telefono?: string | null;
+    email?: string | null;
+    mensaje?: string | null;
+  };
+};
+
       user_roles: {
         Row: {
           created_at: string
