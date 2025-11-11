@@ -36,7 +36,7 @@ export default function ProUnityLandingV2() {
     [path]
   );
 
-  const telegramCTA = "https://t.me/TU_BOT_URL";
+  const telegramCTA = "https://t.me/prounityai_bot";
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
