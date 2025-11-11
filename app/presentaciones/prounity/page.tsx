@@ -25,7 +25,7 @@ export default function ProUnityLandingV2() {
 
   const whatsappCTA = useMemo(
     () =>
-      `https://wa.me/52TU_NUMERO?text=${encodeURIComponent(
+      `https://wa.me/524426094078?text=${encodeURIComponent(
         "Hola ProUnity, quiero una demo: "
           + (path === "con-sistema"
               ? "Tengo un sistema y quiero agregar la capa inteligente."
@@ -36,7 +36,7 @@ export default function ProUnityLandingV2() {
     [path]
   );
 
-  const telegramCTA = "https://t.me/prounityai_bot";
+  const telegramCTA = "https://t.me/mr_kaizen_bot";
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
