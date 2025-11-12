@@ -123,7 +123,7 @@ export default function ProUnityLandingV2() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          Moderniza tu operación en 30 días
+          Moderniza tu operación con IA
         </motion.h1>
         <p className="text-gray-300 max-w-xl mx-auto">
           IA + Lean + Desarrollo humano. Si no hay mejora, no pagas.
