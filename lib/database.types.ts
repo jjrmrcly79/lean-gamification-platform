@@ -64,6 +64,14 @@ export type Database = {
                     introduccion_score: number | null
                     kanban_score: number | null
                     user_id: string | null
+                    perfil_score: number | null
+                    kaizen_score: number | null
+                    involucramiento_score: number | null
+                    sostenimiento_score: number | null
+                    status: string | null
+                    score_by_category: Json | null
+                    score_by_subcategory: Json | null
+                    questions_data: Json | null
                 }
                 Insert: {
                     created_at?: string | null
@@ -74,6 +82,14 @@ export type Database = {
                     introduccion_score?: number | null
                     kanban_score?: number | null
                     user_id?: string | null
+                    perfil_score?: number | null
+                    kaizen_score?: number | null
+                    involucramiento_score?: number | null
+                    sostenimiento_score?: number | null
+                    status?: string | null
+                    score_by_category?: Json | null
+                    score_by_subcategory?: Json | null
+                    questions_data?: Json | null
                 }
                 Update: {
                     created_at?: string | null
@@ -84,8 +100,24 @@ export type Database = {
                     introduccion_score?: number | null
                     kanban_score?: number | null
                     user_id?: string | null
+                    perfil_score?: number | null
+                    kaizen_score?: number | null
+                    involucramiento_score?: number | null
+                    sostenimiento_score?: number | null
+                    status?: string | null
+                    score_by_category?: Json | null
+                    score_by_subcategory?: Json | null
+                    questions_data?: Json | null
                 }
-                Relationships: []
+                Relationships: [
+                    {
+                        foreignKeyName: "attempts_user_id_fkey"
+                        columns: ["user_id"]
+                        isOneToOne: false
+                        referencedRelation: "users"
+                        referencedColumns: ["id"]
+                    }
+                ]
             }
             columns: {
                 Row: {

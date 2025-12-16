@@ -17,7 +17,7 @@ type ScoreBySubcategory = Record<string, { score: number; correct: number; total
 
 // Tipo para una fila de la tabla 'attempts', incluyendo el perfil relacionado.
 type Attempt = Database['public']['Tables']['attempts']['Row'] & {
-  profiles: Database['public']['Tables']['profiles']['Row'] | null;
+  users: Database['public']['Tables']['users']['Row'] | null;
 };
 
 export default function EvaluationPage() {
@@ -30,7 +30,7 @@ export default function EvaluationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  
+
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Estados para los puntajes del formulario.
@@ -39,7 +39,7 @@ export default function EvaluationPage() {
   const [herramientasScore, setHerramientasScore] = useState(0);
   const [involucramientoScore, setInvolucramientoScore] = useState(0);
   const [sostenimientoScore, setSostenimientoScore] = useState(0);
-  
+
   useEffect(() => {
     if (!attemptId) return;
 
@@ -47,7 +47,7 @@ export default function EvaluationPage() {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('attempts')
-        .select(`*, profiles(*)`)
+        .select(`*, users(*)`)
         .eq('id', attemptId)
         .single();
 
@@ -55,7 +55,7 @@ export default function EvaluationPage() {
         setError("No se pudo encontrar la evaluación.");
       } else if (data) {
         setAttempt(data);
-        
+
         if (data.status === 'completed') {
           setIsReadOnly(true);
         }
@@ -74,11 +74,11 @@ export default function EvaluationPage() {
 
   const handleSubmitEvaluation = async () => {
     if (!attempt) return;
-    
+
     const categoryScoresData = attempt.score_by_category as unknown as ScoreByCategory | null;
     const categoryScores = categoryScoresData ? Object.values(categoryScoresData).map(c => c.score) : [];
     const examenAvg = categoryScores.length > 0 ? categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length : 0;
-    
+
     const pisoAvg = (kaizenScore + herramientasScore + involucramientoScore + sostenimientoScore) / 4;
     const finalScore = (examenAvg * 0.40) + (perfilScore * 0.10) + (pisoAvg * 0.50);
 
@@ -102,7 +102,7 @@ export default function EvaluationPage() {
       setTimeout(() => router.push('/consultor/evaluaciones'), 2000);
     }
   };
-  
+
   const categoryRadarData = attempt && attempt.score_by_category ? Object.entries(attempt.score_by_category as unknown as ScoreByCategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
   const subcategoryRadarData = attempt && attempt.score_by_subcategory ? Object.entries(attempt.score_by_subcategory as unknown as ScoreBySubcategory).map(([name, data]) => ({ subject: name, score: parseFloat(data.score.toFixed(1)), fullMark: 100 })) : [];
 
@@ -113,10 +113,10 @@ export default function EvaluationPage() {
     <div className="min-h-screen bg-gray-50 p-8 space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Evaluación de: {attempt?.profiles?.email || 'Usuario'}</CardTitle>
+          <CardTitle className="text-2xl">Evaluación de: {attempt?.users?.email || 'Usuario'}</CardTitle>
           <CardDescription>
-            {isReadOnly 
-              ? "Detalles de una evaluación ya completada." 
+            {isReadOnly
+              ? "Detalles de una evaluación ya completada."
               : "Resultados del examen teórico y formulario para la evaluación práctica."}
           </CardDescription>
         </CardHeader>
@@ -159,7 +159,7 @@ export default function EvaluationPage() {
           </div>
         </CardContent>
       </Card>
-          
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader><CardTitle className="text-center">Desglose por Categoría</CardTitle></CardHeader>

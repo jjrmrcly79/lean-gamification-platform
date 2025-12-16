@@ -22,11 +22,11 @@ export default function HomePage() {
       if (user) {
         // Si hay un usuario, busca su rol
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('users')
           .select('role')
           .eq('id', user.id)
           .single();
-        
+
         // Redirige según el rol
         if (profile?.role === 'consultant') {
           router.push('/consultor');
@@ -66,47 +66,47 @@ export default function HomePage() {
 
   // Si no está cargando y no hubo redirección, muestra el login
   return (
-  <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <div className="w-full max-w-md p-8 space-y-8 bg-white shadow-lg rounded-lg">
-      <div className="text-center">
-        <Image
-          src="/logo.png"
-          alt="Brito & Co Logo"
-          width={200}
-          height={50}
-          className="mx-auto"
-        />
-        <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
-          Inicia sesión en tu cuenta
-        </h2>
-      </div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white shadow-lg rounded-lg">
+        <div className="text-center">
+          <Image
+            src="/logo.png"
+            alt="Brito & Co Logo"
+            width={200}
+            height={50}
+            className="mx-auto"
+          />
+          <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
+            Inicia sesión en tu cuenta
+          </h2>
+        </div>
 
-      <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="email">Correo Electrónico</Label>
-            <Input id="email" name="email" type="email" required />
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Correo Electrónico</Label>
+              <Input id="email" name="email" type="email" required />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input id="password" name="password" type="password" required />
+            </div>
           </div>
           <div>
-            <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" name="password" type="password" required />
+            <Button type="submit" className="w-full">
+              Iniciar Sesión
+            </Button>
           </div>
-        </div>
-        <div>
-          <Button type="submit" className="w-full">
-            Iniciar Sesión
-          </Button>
-        </div>
-      </form>
+        </form>
 
-      {/* El enlace de registro va aquí, después de cerrar el formulario */}
-      <div className="text-center text-sm">
-        <Link href="/registro" className="font-medium text-blue-600 hover:text-blue-500">
-          ¿No tienes una cuenta? Regístrate aquí
-        </Link>
+        {/* El enlace de registro va aquí, después de cerrar el formulario */}
+        <div className="text-center text-sm">
+          <Link href="/registro" className="font-medium text-blue-600 hover:text-blue-500">
+            ¿No tienes una cuenta? Regístrate aquí
+          </Link>
+        </div>
+
       </div>
-      
     </div>
-  </div>
-);
+  );
 }

@@ -16,7 +16,7 @@ type Attempt = Database['public']['Tables']['attempts']['Row'];
 
 export default function ResultsPage() {
   const supabase = getSupabaseBrowserClient();
-  const [attempts, setAttempts] = useState<Attempt[]>([]); 
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ResultsPage() {
       if (user) {
         // 1. OBTENEMOS EL ROL DEL USUARIO ACTUAL
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
+          .from('users')
           .select('role')
           .eq('id', user.id)
           .single();
@@ -46,7 +46,7 @@ export default function ResultsPage() {
         if (profile?.role !== 'consultant') {
           query = query.eq('user_id', user.id);
         }
-        
+
         // 4. EJECUTAMOS LA CONSULTA FINAL CON EL ORDENAMIENTO
         const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -75,7 +75,7 @@ export default function ResultsPage() {
     fullMark: 100
   })) : [];
 
-  const passingScore = 70; 
+  const passingScore = 70;
   const didPass = latestAttempt && latestAttempt.final_score ? latestAttempt.final_score >= passingScore : false;
 
   return (
@@ -124,23 +124,23 @@ export default function ResultsPage() {
                   <CardTitle>Desglose de Evaluación Práctica</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
-                    <div>
-                        <Label>Apego a Perfil (10%)</Label>
-                        <Progress value={latestAttempt.perfil_score || 0} className="mt-1" />
+                  <div>
+                    <Label>Apego a Perfil (10%)</Label>
+                    <Progress value={latestAttempt.perfil_score || 0} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label>Aplicación en Piso (50%)</Label>
+                    <div className="pl-4 mt-2 space-y-2 text-sm">
+                      <p>Kaizen: {latestAttempt.kaizen_score?.toFixed(1)}%</p>
+                      <p>Herramientas: {latestAttempt.herramientas_score?.toFixed(1)}%</p>
+                      <p>Involucramiento: {latestAttempt.involucramiento_score?.toFixed(1)}%</p>
+                      <p>Sostenimiento: {latestAttempt.sostenimiento_score?.toFixed(1)}%</p>
                     </div>
-                    <div>
-                        <Label>Aplicación en Piso (50%)</Label>
-                        <div className="pl-4 mt-2 space-y-2 text-sm">
-                            <p>Kaizen: {latestAttempt.kaizen_score?.toFixed(1)}%</p>
-                            <p>Herramientas: {latestAttempt.herramientas_score?.toFixed(1)}%</p>
-                            <p>Involucramiento: {latestAttempt.involucramiento_score?.toFixed(1)}%</p>
-                            <p>Sostenimiento: {latestAttempt.sostenimiento_score?.toFixed(1)}%</p>
-                        </div>
-                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Desglose por Subcategoría</CardTitle>

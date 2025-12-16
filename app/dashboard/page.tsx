@@ -1,4 +1,4 @@
-'use client'; 
+'use client';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function DashboardPage() {
-  const router = useRouter(); 
-  const supabase = getSupabaseBrowserClient(); 
+  const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false); // --- NUEVO: Estado para el botón de carga
   const [hasAttempted, setHasAttempted] = useState(false);
@@ -20,7 +20,7 @@ export default function DashboardPage() {
     const checkUserStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single();
         if (profile?.role === 'consultant') {
           router.push('/consultor');
           return;
@@ -30,7 +30,7 @@ export default function DashboardPage() {
           console.error('Error checking for existing attempts:', attemptError);
         }
         if (attempt) {
-            setHasAttempted(true);
+          setHasAttempted(true);
         }
         setIsLoading(false);
       } else {
@@ -41,8 +41,8 @@ export default function DashboardPage() {
   }, [router, supabase]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut(); 
-    router.push('/'); 
+    await supabase.auth.signOut();
+    router.push('/');
   };
 
   // --- NUEVA FUNCIÓN: Para iniciar la generación del examen ---
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       setIsGenerating(false);
       return;
     }
-    
+
     // 2. Llamamos a la función de Supabase (sin esperar a que termine)
     supabase.functions.invoke('jiribilla-engine', {
       body: { attempt_id: newAttempt.id },
@@ -88,7 +88,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <header className="flex items-center justify-between w-full px-6 py-3 bg-white border-b">
-         <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="Logo" width={40} height={40} />
           <h1 className="text-xl font-bold text-brand-blue">Diagnóstico Lean</h1>
         </div>
@@ -107,12 +107,12 @@ export default function DashboardPage() {
             <CardContent><p className="text-sm text-gray-500">80 Preguntas</p></CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" className="w-full" disabled>Ver Resultados</Button>
-              
+
               {/* --- LÓGICA DEL BOTÓN MODIFICADA --- */}
               {hasAttempted ? (
                 <Button disabled className="w-full">Diagnóstico Realizado</Button>
               ) : (
-                <Button 
+                <Button
                   onClick={handleStartGeneration}
                   disabled={isGenerating}
                   className="w-full bg-primary text-primary-foreground"

@@ -69,11 +69,11 @@ export default function LoadingExamPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, email')
+        .from('users')
+        .select('name, email')
         .eq('id', user.id)
         .single();
-      setUserName(profile?.full_name || profile?.email || 'participante');
+      setUserName(profile?.name || profile?.email || 'participante');
     })();
   }, [supabase]);
 
