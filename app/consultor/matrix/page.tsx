@@ -1,5 +1,5 @@
 
-import CompetencyMatrix from '@/components/CompetencyMatrix';
+import CompetencyMatrix from '@/app/components/CompetencyMatrix';
 
 export default function MatrixPage() {
     return (
